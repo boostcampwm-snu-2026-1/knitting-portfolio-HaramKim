@@ -1,0 +1,29 @@
+{
+  "name": "@knit-ui/core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/knit-ui.cjs",
+  "module": "./dist/knit-ui.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/knit-ui.js",
+      "require": "./dist/knit-ui.cjs"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  }
+}

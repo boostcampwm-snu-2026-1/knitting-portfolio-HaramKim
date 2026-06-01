@@ -1,0 +1,41 @@
+.knit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.35;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.knit-button:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.knit-button--primary {
+  color: var(--knit-button-primary-text, #08060d);
+  background: var(--knit-button-primary-bg, rgba(170, 59, 255, 0.1));
+}
+
+.knit-button--primary:hover {
+  border-color: var(--knit-button-primary-border, rgba(170, 59, 255, 0.5));
+}
+
+.knit-button--secondary {
+  color: var(--knit-button-secondary-text, #08060d);
+  background: var(--knit-button-secondary-bg, rgba(244, 243, 236, 0.5));
+}
+
+.knit-button--secondary:hover {
+  border-color: var(--knit-button-secondary-border, #e5e4e7);
+}

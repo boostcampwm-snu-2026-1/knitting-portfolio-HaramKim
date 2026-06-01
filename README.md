@@ -9,6 +9,12 @@ Knit UI Portfolio는 뜨개질의 제작 원리와 시각적 구조를 웹 인�
 
 ---
 
+## Project Links
+
+- **Figma**: [View design file](https://www.figma.com/design/ETJIWP7xvOe0IWV7s6rAXy/knitting-portfolio?node-id=0-1&p=f&t=6njE87T7UxAJcTxh-0)
+- **Wiki**: [View documentation](../../wiki)
+- **Portfolio Site**: Coming soon
+
 ## Concept
 
 > **UI as Knitting**

@@ -1,0 +1,12 @@
+.knit-stitch-unit {
+  display: inline-block;
+  width: var(--knit-stitch-size, 48px);
+  height: var(--knit-stitch-size, 48px);
+  overflow: visible;
+  color: var(--knit-stitch-color, var(--knit-color-stitch, #070707));
+  vertical-align: middle;
+}
+
+.knit-stitch-unit__fill {
+  fill: currentColor;
+}

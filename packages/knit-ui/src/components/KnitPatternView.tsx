@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes } from 'react'
-import type { KnitPattern, KnitStitch } from '../pattern'
+import type { KnitCable, KnitPattern, KnitRow, KnitStitch } from '../pattern'
 import {
   getKnitRowWidth,
   getKnitStitchSpan,
@@ -60,21 +60,10 @@ export function KnitPatternView({
       style={patternStyle}
       {...props}
     >
-      {pattern.rows.map((row, rowIndex) => {
-        const rowColumns =
-          rowAlign === 'center' ? getKnitRowWidth(row.stitches) : pattern.castOn
-
-        return (
-          <div
-            className="knit-pattern-view__row"
-            key={rowIndex}
-            style={
-              {
-                '--knit-pattern-row-columns': rowColumns,
-              } as CSSProperties
-            }
-          >
-            {row.stitches.map((stitch, stitchIndex) => (
+      <div className="knit-pattern-view__fabric">
+        {pattern.rows.flatMap((row, rowIndex) =>
+          getPositionedStitches(pattern, row, rowAlign).map(
+            ({ stitch, stitchIndex, column }) => (
               <KnitStitchUnit
                 className="knit-pattern-view__stitch"
                 color={getPatternStitchColor(pattern, stitch)}
@@ -82,13 +71,23 @@ export function KnitPatternView({
                 kind={stitch.kind}
                 size="var(--knit-pattern-stitch-size)"
                 style={{
-                  gridColumn: `span ${getKnitStitchSpan(stitch)}`,
+                  gridColumn: `${column} / span ${getKnitStitchSpan(stitch)}`,
+                  gridRow: rowIndex + 1,
                 }}
               />
-            ))}
-          </div>
-        )
-      })}
+            ),
+          ),
+        )}
+        {pattern.cables?.map((cable, cableIndex) => (
+          <KnitCableOverlay
+            cable={cable}
+            color={getPatternCableColor(pattern)}
+            key={`${cable.row}-${cable.stitch}-${cableIndex}`}
+            pattern={pattern}
+            rowAlign={rowAlign}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -102,4 +101,94 @@ function getPatternStitchColor(
   stitch: KnitStitch,
 ): string | undefined {
   return stitch.color ?? pattern.palette?.colors[0]
+}
+
+function getPatternCableColor(pattern: KnitPattern): string | undefined {
+  return pattern.palette?.colors[0]
+}
+
+function getPositionedStitches(
+  pattern: KnitPattern,
+  row: KnitRow,
+  rowAlign: KnitPatternRowAlign,
+) {
+  let column = getRowStartColumn(pattern, row, rowAlign)
+
+  return row.stitches.map((stitch, stitchIndex) => {
+    const positionedStitch = {
+      column,
+      stitch,
+      stitchIndex,
+    }
+
+    column += getKnitStitchSpan(stitch)
+
+    return positionedStitch
+  })
+}
+
+function getRowStartColumn(
+  pattern: KnitPattern,
+  row: KnitRow,
+  rowAlign: KnitPatternRowAlign,
+): number {
+  if (rowAlign === 'start') {
+    return 1
+  }
+
+  const rowWidth = getKnitRowWidth(row.stitches)
+
+  return Math.max(1, Math.floor((pattern.castOn - rowWidth) / 2) + 1)
+}
+
+interface KnitCableOverlayProps {
+  cable: KnitCable
+  color?: string
+  pattern: KnitPattern
+  rowAlign: KnitPatternRowAlign
+}
+
+function KnitCableOverlay({
+  cable,
+  color,
+  pattern,
+  rowAlign,
+}: KnitCableOverlayProps) {
+  const backPath =
+    cable.direction === 'left'
+      ? 'M25 4 C30 34 70 62 75 96'
+      : 'M75 4 C70 34 30 62 25 96'
+  const frontPath =
+    cable.direction === 'left'
+      ? 'M75 4 C70 34 30 62 25 96'
+      : 'M25 4 C30 34 70 62 75 96'
+  const row = pattern.rows[cable.row]
+  const rowStart = row ? getRowStartColumn(pattern, row, rowAlign) : 1
+  const column = rowStart + cable.stitch
+  const style = {
+    '--knit-cable-color': color,
+    gridColumn: `${column} / span ${cable.width}`,
+    gridRow: `${cable.row + 1} / span ${cable.height}`,
+  } as CSSProperties
+
+  return (
+    <svg
+      aria-hidden="true"
+      className={`knit-pattern-view__cable knit-pattern-view__cable--${cable.direction}`}
+      focusable="false"
+      preserveAspectRatio="none"
+      style={style}
+      viewBox="0 0 100 100"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        className="knit-pattern-view__cable-strand knit-pattern-view__cable-strand--back"
+        d={backPath}
+      />
+      <path
+        className="knit-pattern-view__cable-strand knit-pattern-view__cable-strand--front"
+        d={frontPath}
+      />
+    </svg>
+  )
 }

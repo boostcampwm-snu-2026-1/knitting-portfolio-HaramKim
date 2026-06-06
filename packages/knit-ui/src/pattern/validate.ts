@@ -80,6 +80,15 @@ export function validateKnitPattern(
       })
     }
 
+    if (cable.direction !== 'left' && cable.direction !== 'right') {
+      issues.push({
+        code: 'invalid-cable-direction',
+        message: 'Cable direction must be left or right.',
+        row: cable.row,
+        stitch: cable.stitch,
+      })
+    }
+
     const hasInvalidPosition =
       !Number.isInteger(cable.row) ||
       cable.row < 0 ||

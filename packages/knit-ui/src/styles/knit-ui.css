@@ -4,8 +4,6 @@
   --knit-pattern-stitch-size: 48px;
 
   display: inline-flex;
-  flex-direction: column;
-  gap: var(--knit-pattern-row-gap);
   max-width: 100%;
 }
 
@@ -17,18 +15,45 @@
   --knit-pattern-gap: 8px;
 }
 
-.knit-pattern-view__row {
+.knit-pattern-view__fabric {
   display: grid;
+  grid-auto-rows: var(--knit-pattern-stitch-size);
   grid-template-columns: repeat(
-    var(--knit-pattern-row-columns, var(--knit-pattern-cast-on)),
+    var(--knit-pattern-cast-on),
     var(--knit-pattern-stitch-size)
   );
-  gap: var(--knit-pattern-gap);
+  column-gap: var(--knit-pattern-gap);
+  row-gap: var(--knit-pattern-row-gap);
   justify-content: center;
 }
 
 .knit-pattern-view__stitch {
   justify-self: center;
+}
+
+.knit-pattern-view__cable {
+  align-self: stretch;
+  color: var(--knit-cable-color, var(--knit-color-stitch, #070707));
+  justify-self: stretch;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.knit-pattern-view__cable-strand {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 18;
+}
+
+.knit-pattern-view__cable-strand--back {
+  opacity: 0.34;
+}
+
+.knit-pattern-view__cable-strand--front {
+  opacity: 0.88;
 }
 
 .knit-stitch-unit {

@@ -51,6 +51,7 @@ export interface KnitPatternValidationIssue {
     | 'row-stitch-count-mismatch'
     | 'invalid-stitch-span'
     | 'invalid-cable-size'
+    | 'invalid-cable-direction'
     | 'invalid-cable-position'
     | 'invalid-accident-position'
   message: string

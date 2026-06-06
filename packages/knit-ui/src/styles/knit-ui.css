@@ -1,3 +1,36 @@
+.knit-pattern-view {
+  --knit-pattern-gap: 4px;
+  --knit-pattern-row-gap: var(--knit-pattern-gap);
+  --knit-pattern-stitch-size: 48px;
+
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--knit-pattern-row-gap);
+  max-width: 100%;
+}
+
+.knit-pattern-view--compact {
+  --knit-pattern-gap: 2px;
+}
+
+.knit-pattern-view--loose {
+  --knit-pattern-gap: 8px;
+}
+
+.knit-pattern-view__row {
+  display: grid;
+  grid-template-columns: repeat(
+    var(--knit-pattern-row-columns, var(--knit-pattern-cast-on)),
+    var(--knit-pattern-stitch-size)
+  );
+  gap: var(--knit-pattern-gap);
+  justify-content: center;
+}
+
+.knit-pattern-view__stitch {
+  justify-self: center;
+}
+
 .knit-stitch-unit {
   display: inline-block;
   width: var(--knit-stitch-size, 48px);

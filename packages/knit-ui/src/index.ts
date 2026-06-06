@@ -1,3 +1,4 @@
+export { KnitPatternView } from './components/KnitPatternView'
 export { KnitStitchUnit } from './components/KnitStitchUnit'
 export { defaultKnitPalette } from './pattern'
 export {
@@ -5,6 +6,11 @@ export {
   getKnitStitchSpan,
   validateKnitPattern,
 } from './pattern'
+export type {
+  KnitPatternDensity,
+  KnitPatternRowAlign,
+  KnitPatternViewProps,
+} from './components/KnitPatternView'
 export type { KnitStitchUnitProps } from './components/KnitStitchUnit'
 export type {
   AccidentKind,

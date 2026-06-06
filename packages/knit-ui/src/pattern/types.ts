@@ -1,4 +1,4 @@
-export type StitchKind = 'knit' | 'purl' | 'cable'
+export type StitchKind = 'knit' | 'purl'
 
 export type CableDirection = 'left' | 'right'
 
@@ -16,11 +16,18 @@ export interface KnitStitch {
   kind: StitchKind
   color?: string
   span?: number
-  cableDirection?: CableDirection
 }
 
 export interface KnitRow {
   stitches: KnitStitch[]
+}
+
+export interface KnitCable {
+  row: number
+  stitch: number
+  width: number
+  height: number
+  direction: CableDirection
 }
 
 export interface KnitAccident {
@@ -33,6 +40,7 @@ export interface KnitPattern {
   castOn: number
   rows: KnitRow[]
   palette?: KnitPalette
+  cables?: KnitCable[]
   accidents?: KnitAccident[]
 }
 
@@ -42,7 +50,8 @@ export interface KnitPatternValidationIssue {
     | 'empty-row'
     | 'row-stitch-count-mismatch'
     | 'invalid-stitch-span'
-    | 'missing-cable-direction'
+    | 'invalid-cable-size'
+    | 'invalid-cable-position'
     | 'invalid-accident-position'
   message: string
   row?: number

@@ -20,13 +20,13 @@ React, React DOM, `react/jsx-runtime`은 소비 앱이 제공하는 peer/externa
 
 - 핵심 용어는 README의 개발 계획을 따릅니다: cast-on은 시작 코 수, row는 단, stitch는 코, colorwork는 배색, join은 편물 이어 붙이기, accident는 실수/우연성 이벤트입니다.
 - pattern data는 렌더링 결과보다 먼저 설계되는 입력값입니다. 사용자는 완성된 배경 이미지를 고르는 대신 `castOn`, `rows`, `palette`, `accidents` 같은 도안 데이터로 UI 패턴을 정의한다고 가정합니다.
-- stitch 기법은 장식용 variant가 아니라 패턴을 이루는 구조 단위입니다. 초기 기법은 `knit`, `purl`, `cable`을 기준으로 두고, cable은 단순 아이콘이 아니라 여러 코를 교차하는 구조로 확장될 수 있게 설계합니다.
+- stitch 기법은 장식용 variant가 아니라 패턴을 이루는 구조 단위입니다. 단일 stitch unit은 `knit`, `purl`을 기준으로 두고, cable은 단일 유닛이 아니라 `KnitPattern.cables`에서 여러 row와 여러 코를 교차시키는 구조 정보로 다룹니다.
 - 시각 표현은 Figma MVP 형태를 기반으로 하되, React 컴포넌트와 SVG/CSS로 안정적으로 재사용 가능한 형태를 우선합니다.
 - 포트폴리오 앱은 이 시스템의 첫 소비자이지만, 패키지 API는 포트폴리오에만 묶이지 않는 재사용 가능한 UI 라이브러리 경계를 유지합니다.
 
 ## v1 결정사항
 
-- v1은 `KnitPattern`, `KnitRow`, `KnitStitch`, `KnitPalette` 타입과 row별 stitch 수 검증을 먼저 고정합니다. 불완전한 row 허용 여부는 구현 시 명시적인 정책으로 결정합니다.
+- v1은 `KnitPattern`, `KnitRow`, `KnitStitch`, `KnitPalette`, `KnitCable` 타입과 row별 stitch 수 검증을 먼저 고정합니다. 불완전한 row 허용 여부는 구현 시 명시적인 정책으로 결정합니다.
 - 컬러 시스템은 자동 이미지 추출보다 수동 팔레트 정의를 우선합니다. 프로젝트별 색감은 소비 앱에서 명시적으로 CSS 변수나 props로 전달하는 방향을 기본값으로 둡니다.
 - 뜨개질 이미지는 외부 래스터 에셋에 의존하기보다 SVG 기반 stitch/row/pattern 구조로 재구성합니다. 기본 stitch는 Figma의 knit/purl MVP 형태를 기준으로 구현하고, 색상은 `color` prop과 CSS 변수 fallback으로 제어합니다.
 - public API는 `KnitPatternView`를 중심으로 설계합니다. 세부 stitch 컴포넌트가 있더라도, 소비자가 우선 사용하는 진입점은 pattern data를 받아 rows와 stitches를 렌더링하는 상위 컴포넌트입니다.

@@ -1,7 +1,9 @@
+export { defaultKnitPalette } from './palette'
 export type {
   AccidentKind,
   CableDirection,
   KnitAccident,
+  KnitCable,
   KnitPalette,
   KnitPattern,
   KnitPatternValidationIssue,

@@ -24,12 +24,15 @@
 
   예상 public type:
 
-  type StitchKind = 'knit' | 'purl' | 'cable'
+  type StitchKind = 'knit' | 'purl'
+
+  type CableDirection = 'left' | 'right'
 
   interface KnitPattern {
     castOn: number
     rows: KnitRow[]
     palette?: KnitPalette
+    cables?: KnitCable[]
     accidents?: KnitAccident[]
   }
 
@@ -42,13 +45,22 @@
     color?: string
   }
 
-    colors?: string[]
+  interface KnitCable {
+    row: number
+    stitch: number
+    width: number
+    height: number
+    direction: CableDirection
+  }
+
+  interface KnitPalette {
+    colors: string[]
   }
 
   TODO:
 
   - packages/knit-ui/src/core 또는 src/pattern 디렉터리 추가
-  - KnitPattern, KnitRow, KnitStitch, KnitPalette 타입 정의
+  - KnitPattern, KnitRow, KnitStitch, KnitPalette, KnitCable 타입 정의
   - 시작 코 수와 row별 stitch 수 검증 유틸 작성
   - 불완전한 row를 허용할지, 오류로 처리할지 정책 결정
   - src/index.ts에서 public type export
@@ -57,12 +69,12 @@
 
   ### 2. Stitch Unit 구현
 
-  목표: 안뜨기/겉뜨기/cable을 독립적인 시각 유닛으로 구현합니다.
+  목표: 안뜨기/겉뜨기를 독립적인 시각 유닛으로 구현합니다.
 
   TODO:
 
   - KnitStitchUnit 컴포넌트 추가
-  - kind="knit" | "purl" | "cable"에 따라 다른 형태 렌더링
+  - kind="knit" | "purl"에 따라 다른 형태 렌더링
   - Figma MVP 형태를 기반으로 SVG 또는 CSS shape로 구현
   - 색상은 color prop과 CSS 변수 fallback으로 제어
   - 기본 팔레트:
@@ -100,12 +112,12 @@
 
   ### 4. Cable Stitch와 구조적 패턴
 
-  목표: cable stitch를 단순 아이콘이 아니라 여러 코를 교차하는 구조로 표현합니다.
+  목표: cable stitch를 단일 유닛이 아니라 여러 row와 여러 코를 교차하는 구조로 표현합니다.
 
   TODO:
 
-  - cable은 최소 2코 이상을 차지하는 stitch group으로 모델링
-  - KnitStitch에 span 또는 별도 CableStitch 타입 도입 검토
+  - cable은 `KnitPattern.cables`에서 별도 구조 정보로 지정
+  - KnitCable은 시작 row/stitch, width, height, direction을 가짐
   - cable 방향:
       - left cross
       - right cross
@@ -175,7 +187,7 @@
       - 용어와 public API 방향 확정
 
   2. 타입 모델
-      - KnitPattern, KnitRow, KnitStitch, KnitPalette, KnitAccident 타입 추가
+      - KnitPattern, KnitRow, KnitStitch, KnitPalette, KnitCable, KnitAccident 타입 추가
       - validation 유틸 추가
       - index export 정리
 
@@ -190,9 +202,9 @@
       - cast-on, row count 기반 layout 처리
 
   5. Cable
-      - cable stitch 타입 확장
+      - KnitPattern.cables 기반 cable 구조 확장
       - 좌/우 교차 시각화
-      - row 안에서 span 처리
+      - 여러 row와 여러 stitch 위에 overlay 처리
 
   6. Accidents
       - dropped stitch

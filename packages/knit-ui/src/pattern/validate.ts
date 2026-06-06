@@ -51,14 +51,6 @@ export function validateKnitPattern(
         })
       }
 
-      if (stitch.kind === 'cable' && !stitch.cableDirection) {
-        issues.push({
-          code: 'missing-cable-direction',
-          message: 'Cable stitches must define cableDirection.',
-          row: rowIndex,
-          stitch: stitchIndex,
-        })
-      }
     })
 
     const rowWidth = getKnitRowWidth(row.stitches)
@@ -68,6 +60,47 @@ export function validateKnitPattern(
         code: 'row-stitch-count-mismatch',
         message: `Row width must match castOn. Expected ${pattern.castOn}, received ${rowWidth}.`,
         row: rowIndex,
+      })
+    }
+  })
+
+  pattern.cables?.forEach((cable) => {
+    const hasInvalidSize =
+      !Number.isInteger(cable.width) ||
+      cable.width < 2 ||
+      !Number.isInteger(cable.height) ||
+      cable.height < 2
+
+    if (hasInvalidSize) {
+      issues.push({
+        code: 'invalid-cable-size',
+        message: 'Cable width and height must be integers greater than 1.',
+        row: cable.row,
+        stitch: cable.stitch,
+      })
+    }
+
+    const hasInvalidPosition =
+      !Number.isInteger(cable.row) ||
+      cable.row < 0 ||
+      !Number.isInteger(cable.stitch) ||
+      cable.stitch < 0
+    const coveredRows = hasInvalidSize
+      ? []
+      : pattern.rows.slice(cable.row, cable.row + cable.height)
+    const cableFitsRows =
+      !hasInvalidPosition &&
+      coveredRows.length === cable.height &&
+      coveredRows.every(
+        (row) => cable.stitch + cable.width <= getKnitRowWidth(row.stitches),
+      )
+
+    if (!cableFitsRows) {
+      issues.push({
+        code: 'invalid-cable-position',
+        message: 'Cable must fit inside existing rows and stitches.',
+        row: cable.row,
+        stitch: cable.stitch,
       })
     }
   })

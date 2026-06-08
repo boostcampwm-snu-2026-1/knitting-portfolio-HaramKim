@@ -1,6 +1,8 @@
 export type StitchKind = 'knit' | 'purl'
 
-export type CableDirection = 'left' | 'right'
+export type CableCross = 'left-over-right' | 'right-over-left'
+
+export type KnitCableColor = string | string[] | string[][]
 
 export type AccidentKind =
   | 'dropped-stitch'
@@ -24,10 +26,13 @@ export interface KnitRow {
 
 export interface KnitCable {
   row: number
-  stitch: number
-  width: number
   height: number
-  direction: CableDirection
+  leftStartStitch: number
+  leftEndStitch: number
+  rightStartStitch: number
+  rightEndStitch: number
+  cross: CableCross
+  color?: KnitCableColor
 }
 
 export interface KnitAccident {
@@ -51,7 +56,8 @@ export interface KnitPatternValidationIssue {
     | 'row-stitch-count-mismatch'
     | 'invalid-stitch-span'
     | 'invalid-cable-size'
-    | 'invalid-cable-direction'
+    | 'invalid-cable-cross'
+    | 'invalid-cable-color'
     | 'invalid-cable-position'
     | 'invalid-accident-position'
   message: string

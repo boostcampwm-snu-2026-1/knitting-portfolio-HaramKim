@@ -2,6 +2,11 @@
   --knit-pattern-gap: 4px;
   --knit-pattern-row-gap: var(--knit-pattern-gap);
   --knit-pattern-stitch-size: 48px;
+  --knit-pattern-stitch-overlap: 6px;
+  --knit-pattern-track-size: max(
+    1px,
+    calc(var(--knit-pattern-stitch-size) - var(--knit-pattern-stitch-overlap))
+  );
 
   display: inline-flex;
   max-width: 100%;
@@ -17,10 +22,10 @@
 
 .knit-pattern-view__fabric {
   display: grid;
-  grid-auto-rows: var(--knit-pattern-stitch-size);
+  grid-auto-rows: var(--knit-pattern-track-size);
   grid-template-columns: repeat(
     var(--knit-pattern-cast-on),
-    var(--knit-pattern-stitch-size)
+    var(--knit-pattern-track-size)
   );
   column-gap: var(--knit-pattern-gap);
   row-gap: var(--knit-pattern-row-gap);
@@ -37,23 +42,13 @@
   justify-self: stretch;
   overflow: visible;
   pointer-events: none;
+  position: relative;
   z-index: 1;
 }
 
-.knit-pattern-view__cable-strand {
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 18;
-}
-
-.knit-pattern-view__cable-strand--back {
-  opacity: 0.34;
-}
-
-.knit-pattern-view__cable-strand--front {
-  opacity: 0.88;
+.knit-pattern-view__cable-stitch {
+  position: absolute;
+  transform-origin: center;
 }
 
 .knit-stitch-unit {

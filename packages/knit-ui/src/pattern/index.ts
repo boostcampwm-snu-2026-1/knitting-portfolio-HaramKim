@@ -1,9 +1,10 @@
 export { defaultKnitPalette } from './palette'
 export type {
   AccidentKind,
-  CableDirection,
+  CableCross,
   KnitAccident,
   KnitCable,
+  KnitCableColor,
   KnitPalette,
   KnitPattern,
   KnitPatternValidationIssue,
@@ -14,6 +15,7 @@ export type {
 } from './types'
 export {
   getKnitRowWidth,
+  getKnitCableWidth,
   getKnitStitchSpan,
   validateKnitPattern,
 } from './validate'

@@ -1,41 +1,65 @@
-.knit-button {
+.knit-pattern-view {
+  --knit-pattern-gap: 4px;
+  --knit-pattern-row-gap: var(--knit-pattern-gap);
+  --knit-pattern-stitch-size: 48px;
+  --knit-pattern-stitch-overlap: 6px;
+  --knit-pattern-track-size: max(
+    1px,
+    calc(var(--knit-pattern-stitch-size) - var(--knit-pattern-stitch-overlap))
+  );
+
   display: inline-flex;
-  align-items: center;
+  max-width: 100%;
+}
+
+.knit-pattern-view--compact {
+  --knit-pattern-gap: 2px;
+}
+
+.knit-pattern-view--loose {
+  --knit-pattern-gap: 8px;
+}
+
+.knit-pattern-view__fabric {
+  display: grid;
+  grid-auto-rows: var(--knit-pattern-track-size);
+  grid-template-columns: repeat(
+    var(--knit-pattern-cast-on),
+    var(--knit-pattern-track-size)
+  );
+  column-gap: var(--knit-pattern-gap);
+  row-gap: var(--knit-pattern-row-gap);
   justify-content: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 6px 12px;
-  border: 2px solid transparent;
-  border-radius: 5px;
-  font: inherit;
-  font-size: 16px;
-  line-height: 1.35;
-  cursor: pointer;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease,
-    color 0.2s ease;
 }
 
-.knit-button:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
+.knit-pattern-view__stitch {
+  justify-self: center;
 }
 
-.knit-button--primary {
-  color: var(--knit-button-primary-text, #08060d);
-  background: var(--knit-button-primary-bg, rgba(170, 59, 255, 0.1));
+.knit-pattern-view__cable {
+  align-self: stretch;
+  color: var(--knit-cable-color, var(--knit-color-stitch, #070707));
+  justify-self: stretch;
+  overflow: visible;
+  pointer-events: none;
+  position: relative;
+  z-index: 1;
 }
 
-.knit-button--primary:hover {
-  border-color: var(--knit-button-primary-border, rgba(170, 59, 255, 0.5));
+.knit-pattern-view__cable-stitch {
+  position: absolute;
+  transform-origin: center;
 }
 
-.knit-button--secondary {
-  color: var(--knit-button-secondary-text, #08060d);
-  background: var(--knit-button-secondary-bg, rgba(244, 243, 236, 0.5));
+.knit-stitch-unit {
+  display: inline-block;
+  width: var(--knit-stitch-size, 48px);
+  height: var(--knit-stitch-size, 48px);
+  overflow: visible;
+  color: var(--knit-stitch-color, var(--knit-color-stitch, #070707));
+  vertical-align: middle;
 }
 
-.knit-button--secondary:hover {
-  border-color: var(--knit-button-secondary-border, #e5e4e7);
+.knit-stitch-unit__fill {
+  fill: currentColor;
 }

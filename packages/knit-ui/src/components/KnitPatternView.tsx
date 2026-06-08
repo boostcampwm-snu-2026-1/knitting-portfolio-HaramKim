@@ -7,6 +7,7 @@ import type {
   KnitStitch,
 } from '../pattern'
 import {
+  getKnitCableCount,
   getKnitCableWidth,
   getKnitRowWidth,
   getKnitStitchSpan,
@@ -61,6 +62,8 @@ export function KnitPatternView({
     ...(rowGap ? { '--knit-pattern-row-gap': toCssSize(rowGap) } : {}),
   } as CSSProperties
   const ariaLabel = props['aria-label']
+  const cables = getExpandedCables(pattern.cables)
+  const hiddenStitchCells = getHiddenStitchCells(cables)
 
   return (
     <div
@@ -75,22 +78,23 @@ export function KnitPatternView({
       <div className="knit-pattern-view__fabric">
         {pattern.rows.flatMap((row, rowIndex) =>
           getPositionedStitches(pattern, row, rowAlign).map(
-            ({ stitch, stitchIndex, column }) => (
-              <KnitStitchUnit
-                className="knit-pattern-view__stitch"
-                color={getPatternStitchColor(pattern, stitch)}
-                key={`${rowIndex}-${stitchIndex}`}
-                kind={stitch.kind}
-                size="var(--knit-pattern-stitch-size)"
-                style={{
-                  gridColumn: `${column} / span ${getKnitStitchSpan(stitch)}`,
-                  gridRow: rowIndex + 1,
-                }}
-              />
-            ),
+            ({ stitch, stitchIndex, column }) =>
+              isStitchHidden(hiddenStitchCells, rowIndex, column, stitch) ? null : (
+                <KnitStitchUnit
+                  className="knit-pattern-view__stitch"
+                  color={getPatternStitchColor(pattern, stitch)}
+                  key={`${rowIndex}-${stitchIndex}`}
+                  kind={stitch.kind}
+                  size="var(--knit-pattern-stitch-size)"
+                  style={{
+                    gridColumn: `${column} / span ${getKnitStitchSpan(stitch)}`,
+                    gridRow: rowIndex + 1,
+                  }}
+                />
+              ),
           ),
         )}
-        {pattern.cables?.map((cable, cableIndex) => (
+        {cables.map((cable, cableIndex) => (
           <KnitCableOverlay
             cable={cable}
             key={`${cable.row}-${cable.leftStartStitch}-${cableIndex}`}
@@ -101,6 +105,75 @@ export function KnitPatternView({
       </div>
     </div>
   )
+}
+
+function getExpandedCables(cables: KnitCable[] | undefined): KnitCable[] {
+  return (
+    cables?.flatMap((cable) =>
+      Array.from({ length: getKnitCableCount(cable) }, (_, repeatIndex) =>
+        getRepeatedCable(cable, repeatIndex),
+      ),
+    ) ?? []
+  )
+}
+
+function getRepeatedCable(cable: KnitCable, repeatIndex: number): KnitCable {
+  return {
+    color: cable.color,
+    cross: getRepeatedCableCross(cable.cross, repeatIndex),
+    height: cable.height,
+    leftEndStitch: cable.leftEndStitch,
+    leftStartStitch: cable.leftStartStitch,
+    rightEndStitch: cable.rightEndStitch,
+    rightStartStitch: cable.rightStartStitch,
+    row: cable.row + cable.height * repeatIndex,
+  }
+}
+
+function getRepeatedCableCross(
+  cross: KnitCable['cross'],
+  repeatIndex: number,
+): KnitCable['cross'] {
+  if (repeatIndex % 2 === 0) {
+    return cross
+  }
+
+  return cross === 'left-over-right' ? 'right-over-left' : 'left-over-right'
+}
+
+function getHiddenStitchCells(cables: KnitCable[]): Set<string> {
+  const cells = new Set<string>()
+
+  cables.forEach((cable) => {
+    for (let row = cable.row; row < cable.row + cable.height; row += 1) {
+      for (
+        let column = cable.leftStartStitch;
+        column <= cable.rightEndStitch;
+        column += 1
+      ) {
+        cells.add(getStitchCellKey(row, column))
+      }
+    }
+  })
+
+  return cells
+}
+
+function isStitchHidden(
+  cells: Set<string>,
+  rowIndex: number,
+  column: number,
+  stitch: KnitStitch,
+): boolean {
+  const span = getKnitStitchSpan(stitch)
+
+  return Array.from({ length: span }, (_, spanIndex) =>
+    cells.has(getStitchCellKey(rowIndex, column + spanIndex - 1)),
+  ).some(Boolean)
+}
+
+function getStitchCellKey(row: number, column: number): string {
+  return `${row}:${column}`
 }
 
 function toCssSize(value: number | string): string {

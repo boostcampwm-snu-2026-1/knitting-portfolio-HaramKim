@@ -15,6 +15,7 @@ export type {
 } from './types'
 export {
   getKnitRowWidth,
+  getKnitCableCount,
   getKnitCableWidth,
   getKnitStitchSpan,
   validateKnitPattern,

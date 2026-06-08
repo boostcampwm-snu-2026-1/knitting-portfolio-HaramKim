@@ -27,6 +27,7 @@ export interface KnitRow {
 export interface KnitCable {
   row: number
   height: number
+  count?: number
   leftStartStitch: number
   leftEndStitch: number
   rightStartStitch: number

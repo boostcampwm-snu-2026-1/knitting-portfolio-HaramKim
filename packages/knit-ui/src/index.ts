@@ -2,6 +2,7 @@ export { KnitPatternView } from './components/KnitPatternView'
 export { KnitStitchUnit } from './components/KnitStitchUnit'
 export { defaultKnitPalette } from './pattern'
 export {
+  getKnitCableCount,
   getKnitCableWidth,
   getKnitRowWidth,
   getKnitStitchSpan,

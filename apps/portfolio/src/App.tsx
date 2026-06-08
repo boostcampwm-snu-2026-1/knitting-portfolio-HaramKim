@@ -20,23 +20,25 @@ const cablePattern: KnitPattern = {
   ...makePattern(
     [
       makeRowKinds('purl', 2).concat(
-        makeRowKinds('knit', 4),
-        makeRowKinds('purl', 2),
+        makeRowKinds('knit', 6),
       ),
     ],
     5,
     5,
   ),
   palette: {
-    colors: ['#070707'],
+    colors: ['#E88C8C'],
   },
   cables: [
     {
       row: 1,
-      stitch: 2,
-      width: 4,
-      height: 3,
-      direction: 'left',
+      height: 4,
+      leftStartStitch: 2,
+      leftEndStitch: 4,
+      rightStartStitch: 5,
+      rightEndStitch: 7,
+      cross: 'left-over-right',
+      color: ['#F79999', '#F79999', '#F79999', '#B26666', '#B26666', '#B26666'],
     },
   ],
 }

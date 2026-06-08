@@ -18,6 +18,16 @@ import '../styles/knit-ui.css'
 
 export type KnitPatternDensity = 'compact' | 'regular' | 'loose'
 export type KnitPatternRowAlign = 'center' | 'start'
+export type KnitPatternRevealOrder =
+  | 'left-to-right'
+  | 'right-to-left'
+  | 'alternating'
+
+export interface KnitPatternRevealOptions {
+  direction?: 'top-to-bottom' | 'bottom-to-top'
+  order?: KnitPatternRevealOrder
+  visibleStitchCount: number
+}
 
 export interface KnitPatternViewProps extends HTMLAttributes<HTMLDivElement> {
   pattern: KnitPattern
@@ -27,6 +37,7 @@ export interface KnitPatternViewProps extends HTMLAttributes<HTMLDivElement> {
   gap?: number | string
   rowGap?: number | string
   rowAlign?: KnitPatternRowAlign
+  reveal?: KnitPatternRevealOptions
   allowIncompleteRows?: boolean
 }
 
@@ -38,6 +49,7 @@ export function KnitPatternView({
   gap,
   rowGap,
   rowAlign = 'center',
+  reveal,
   allowIncompleteRows,
   className,
   style,
@@ -81,7 +93,13 @@ export function KnitPatternView({
             ({ stitch, stitchIndex, column }) =>
               isStitchHidden(hiddenStitchCells, rowIndex, column, stitch) ? null : (
                 <KnitStitchUnit
-                  className="knit-pattern-view__stitch"
+                  className={getRevealClasses(
+                    'knit-pattern-view__stitch',
+                    pattern,
+                    reveal,
+                    rowIndex,
+                    column - 1,
+                  )}
                   color={getPatternStitchColor(pattern, stitch)}
                   key={`${rowIndex}-${stitchIndex}`}
                   kind={stitch.kind}
@@ -99,6 +117,7 @@ export function KnitPatternView({
             cable={cable}
             key={`${cable.row}-${cable.leftStartStitch}-${cableIndex}`}
             pattern={pattern}
+            reveal={reveal}
             rowAlign={rowAlign}
           />
         ))}
@@ -176,6 +195,67 @@ function getStitchCellKey(row: number, column: number): string {
   return `${row}:${column}`
 }
 
+function getRevealClasses(
+  className: string,
+  pattern: KnitPattern,
+  reveal: KnitPatternRevealOptions | undefined,
+  rowIndex: number,
+  columnIndex: number,
+): string {
+  if (!reveal) {
+    return className
+  }
+
+  const revealIndex = getRevealIndex(
+    pattern,
+    rowIndex,
+    columnIndex,
+    reveal.direction ?? 'top-to-bottom',
+    reveal.order ?? 'left-to-right',
+  )
+  const revealClass =
+    revealIndex < reveal.visibleStitchCount
+      ? 'knit-pattern-view__reveal-stitch--visible'
+      : 'knit-pattern-view__reveal-stitch--hidden'
+
+  return `${className} knit-pattern-view__reveal-stitch ${revealClass}`
+}
+
+function getRevealIndex(
+  pattern: KnitPattern,
+  rowIndex: number,
+  columnIndex: number,
+  direction: KnitPatternRevealOptions['direction'],
+  order: KnitPatternRevealOrder,
+): number {
+  const revealRowIndex =
+    direction === 'bottom-to-top'
+      ? pattern.rows.length - rowIndex - 1
+      : rowIndex
+
+  return (
+    revealRowIndex * pattern.castOn +
+    getRevealColumnIndex(pattern, revealRowIndex, columnIndex, order)
+  )
+}
+
+function getRevealColumnIndex(
+  pattern: KnitPattern,
+  revealRowIndex: number,
+  columnIndex: number,
+  order: KnitPatternRevealOrder,
+): number {
+  if (order === 'right-to-left') {
+    return pattern.castOn - columnIndex - 1
+  }
+
+  if (order === 'alternating' && revealRowIndex % 2 === 1) {
+    return pattern.castOn - columnIndex - 1
+  }
+
+  return columnIndex
+}
+
 function toCssSize(value: number | string): string {
   return typeof value === 'number' ? `${value}px` : value
 }
@@ -224,12 +304,14 @@ function getRowStartColumn(
 interface KnitCableOverlayProps {
   cable: KnitCable
   pattern: KnitPattern
+  reveal?: KnitPatternRevealOptions
   rowAlign: KnitPatternRowAlign
 }
 
 function KnitCableOverlay({
   cable,
   pattern,
+  reveal,
   rowAlign,
 }: KnitCableOverlayProps) {
   const row = pattern.rows[cable.row]
@@ -251,10 +333,16 @@ function KnitCableOverlay({
     >
       {segments.map((segment) => (
         <KnitStitchUnit
-          className={[
-            'knit-pattern-view__cable-stitch',
-            `knit-pattern-view__cable-stitch--${segment.strand}`,
-          ].join(' ')}
+          className={getRevealClasses(
+            [
+              'knit-pattern-view__cable-stitch',
+              `knit-pattern-view__cable-stitch--${segment.strand}`,
+            ].join(' '),
+            pattern,
+            reveal,
+            cable.row + segment.rowIndex,
+            cable.leftStartStitch + segment.columnIndex,
+          )}
           color={getCableSegmentColor(pattern, cable, segment)}
           key={`${segment.strand}-${segment.laneIndex}-${segment.rowIndex}`}
           kind="knit"

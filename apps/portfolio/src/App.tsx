@@ -1,4 +1,4 @@
-import { KnitPatternView, KnitStitchUnit } from '@knit-ui/core'
+import { KnitPatternView, KnitScrollPattern, KnitStitchUnit } from '@knit-ui/core'
 import type { KnitPattern, StitchKind } from '@knit-ui/core'
 import './App.css'
 
@@ -157,6 +157,22 @@ function App() {
             stitchSize={34}
           />
         </article>
+      </section>
+
+      <section className="scroll-demo">
+        <div className="sample-copy">
+          <h2>Scroll knitting</h2>
+          <p>Scroll through the stage to knit and unravel stitch units.</p>
+        </div>
+        <KnitScrollPattern
+          aria-label="scroll knitted cable pattern"
+          gap={2}
+          needle={{ visible: true }}
+          pattern={cablePattern}
+          rowGap={1}
+          scrollLength="180vh"
+          stitchSize={44}
+        />
       </section>
     </main>
   )

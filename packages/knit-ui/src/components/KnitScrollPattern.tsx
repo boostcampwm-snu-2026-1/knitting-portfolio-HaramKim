@@ -51,7 +51,7 @@ export function KnitScrollPattern({
     [pattern, progress],
   )
   const totalStitchCount = getScrollableStitchCount(pattern)
-  const stitchMotionProgress = getLoopProgress(progress * totalStitchCount * 0.35)
+  const stitchMotionProgress = getLoopProgress(progress * totalStitchCount*0.25)
   const needlePierceProgress = Math.sin(stitchMotionProgress * Math.PI)
   const needleLiftProgress = Math.sin(stitchMotionProgress * Math.PI * 2)
   const needleAngle = needle?.angle ?? 13.63

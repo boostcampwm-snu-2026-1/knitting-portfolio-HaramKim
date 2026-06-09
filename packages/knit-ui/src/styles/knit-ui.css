@@ -86,8 +86,15 @@
   --knit-scroll-needle-angle: 13.63deg;
   --knit-scroll-needle-color: #e2a959;
   --knit-scroll-needle-highlight: #eecea2;
+  --knit-scroll-needle-left-angle: calc(var(--knit-scroll-needle-angle) * -1);
+  --knit-scroll-needle-left-x: 0px;
+  --knit-scroll-needle-left-y: 0px;
+  --knit-scroll-needle-right-angle: var(--knit-scroll-needle-angle);
+  --knit-scroll-needle-right-x: 0px;
+  --knit-scroll-needle-right-y: 0px;
   --knit-scroll-needle-thickness: 24px;
   --knit-scroll-needle-width: min(46vw, 665px);
+  --knit-scroll-progress: 0;
   --knit-scroll-total-rows: 1;
   --knit-scroll-visible-rows: 0;
   --knit-scroll-stitch-size: 48px;
@@ -146,6 +153,11 @@
     var(--knit-scroll-needle-color),
     var(--knit-scroll-needle-highlight)
   );
+  border-radius: 999px;
+  box-shadow:
+    0 2px 0 rgb(255 255 255 / 0.24) inset,
+    0 -4px 8px rgb(73 38 13 / 0.28) inset,
+    0 18px 28px rgb(0 0 0 / 0.28);
   display: block;
   height: var(--knit-scroll-needle-thickness);
   position: absolute;
@@ -153,16 +165,38 @@
   width: var(--knit-scroll-needle-width);
 }
 
+.knit-scroll-pattern__needle::before {
+  background: var(--knit-scroll-needle-highlight);
+  border-radius: 50%;
+  content: '';
+  height: var(--knit-scroll-needle-thickness);
+  position: absolute;
+  top: 0;
+  width: calc(var(--knit-scroll-needle-thickness) * 3.2);
+}
+
 .knit-scroll-pattern__needle--left {
   left: 3vw;
-  transform: rotate(calc(var(--knit-scroll-needle-angle) * -1));
+  transform:
+    translate(var(--knit-scroll-needle-left-x), var(--knit-scroll-needle-left-y))
+    rotate(var(--knit-scroll-needle-left-angle));
   transform-origin: right center;
+}
+
+.knit-scroll-pattern__needle--left::before {
+  right: calc(var(--knit-scroll-needle-thickness) * -1.6);
 }
 
 .knit-scroll-pattern__needle--right {
   right: 3vw;
-  transform: rotate(var(--knit-scroll-needle-angle));
+  transform:
+    translate(var(--knit-scroll-needle-right-x), var(--knit-scroll-needle-right-y))
+    rotate(var(--knit-scroll-needle-right-angle));
   transform-origin: left center;
+}
+
+.knit-scroll-pattern__needle--right::before {
+  left: calc(var(--knit-scroll-needle-thickness) * -1.6);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -172,5 +206,14 @@
 
   .knit-scroll-pattern__fabric {
     transition: none;
+  }
+
+  .knit-scroll-pattern__needle--left,
+  .knit-scroll-pattern__needle--right {
+    transform: rotate(var(--knit-scroll-needle-angle));
+  }
+
+  .knit-scroll-pattern__needle--left {
+    transform: rotate(calc(var(--knit-scroll-needle-angle) * -1));
   }
 }

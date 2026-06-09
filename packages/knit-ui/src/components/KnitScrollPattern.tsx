@@ -50,6 +50,11 @@ export function KnitScrollPattern({
     () => Math.ceil(getScrollableStitchCount(pattern) * progress),
     [pattern, progress],
   )
+  const totalStitchCount = getScrollableStitchCount(pattern)
+  const stitchMotionProgress = getLoopProgress(progress * totalStitchCount * 0.35)
+  const needlePierceProgress = Math.sin(stitchMotionProgress * Math.PI)
+  const needleLiftProgress = Math.sin(stitchMotionProgress * Math.PI * 2)
+  const needleAngle = needle?.angle ?? 13.63
   const visibleRowCount = Math.min(
     pattern.rows.length,
     Math.max(1, Math.ceil(visibleStitchCount / pattern.castOn)),
@@ -57,6 +62,13 @@ export function KnitScrollPattern({
   const classes = ['knit-scroll-pattern', className].filter(Boolean).join(' ')
   const scrollStyle = {
     ...style,
+    '--knit-scroll-progress': progress,
+    '--knit-scroll-needle-left-angle': `${(needleAngle + needleLiftProgress * 2) * -1}deg`,
+    '--knit-scroll-needle-left-x': `${needlePierceProgress * -12}px`,
+    '--knit-scroll-needle-left-y': `${needleLiftProgress * -7}px`,
+    '--knit-scroll-needle-right-angle': `${needleAngle + needlePierceProgress * -5}deg`,
+    '--knit-scroll-needle-right-x': `${needlePierceProgress * -34}px`,
+    '--knit-scroll-needle-right-y': `${needleLiftProgress * 12}px`,
     '--knit-scroll-total-rows': pattern.rows.length,
     '--knit-scroll-visible-rows': visibleRowCount,
     '--knit-scroll-length': toCssSize(scrollLength),
@@ -65,7 +77,7 @@ export function KnitScrollPattern({
     '--knit-scroll-row-gap': toCssSize(
       rowGap ?? gap ?? getDensityGap(density),
     ),
-    '--knit-scroll-needle-angle': `${needle?.angle ?? 13.63}deg`,
+    '--knit-scroll-needle-angle': `${needleAngle}deg`,
     '--knit-scroll-needle-color': needle?.color,
     '--knit-scroll-needle-highlight': needle?.highlightColor,
     '--knit-scroll-needle-thickness': needle?.thickness
@@ -176,4 +188,8 @@ function getDensityGap(density: KnitPatternViewProps['density']): number {
 
 function clampNumber(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
+}
+
+function getLoopProgress(value: number): number {
+  return value - Math.floor(value)
 }

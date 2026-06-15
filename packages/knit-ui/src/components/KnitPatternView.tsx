@@ -1,11 +1,11 @@
-import type { CSSProperties, HTMLAttributes } from 'react'
+import { useState } from 'react'
+import type { CSSProperties, HTMLAttributes, KeyboardEvent } from 'react'
 import type {
   KnitCable,
   KnitCableColor,
   KnitPattern,
   KnitRow,
   KnitStitch,
-  StitchKind,
 } from '../pattern'
 import {
   getKnitCableCount,
@@ -58,6 +58,9 @@ export function KnitPatternView({
   style,
   ...props
 }: KnitPatternViewProps) {
+  const [resolvedMistakeCells, setResolvedMistakeCells] = useState<Set<string>>(
+    () => new Set(),
+  )
   const validation = validateKnitPattern(pattern, { allowIncompleteRows })
   const classes = [
     'knit-pattern-view',
@@ -80,45 +83,101 @@ export function KnitPatternView({
   const cables = getExpandedCables(pattern.cables)
   const hiddenStitchCells = getHiddenStitchCells(cables)
   const normalizedMistakeFrequency = normalizeMistakeFrequency(mistakeFrequency)
+  const hasInteractiveMistakes = normalizedMistakeFrequency > 0
+
+  function resolveMistake(cellKey: string) {
+    setResolvedMistakeCells((currentCells) => {
+      if (currentCells.has(cellKey)) {
+        return currentCells
+      }
+
+      const nextCells = new Set(currentCells)
+      nextCells.add(cellKey)
+
+      return nextCells
+    })
+  }
 
   return (
     <div
-      aria-hidden={ariaLabel ? undefined : true}
+      aria-hidden={ariaLabel || hasInteractiveMistakes ? undefined : true}
       className={classes}
       data-row-count={pattern.rows.length}
       data-valid={validation.valid ? 'true' : 'false'}
-      role={ariaLabel ? 'img' : undefined}
+      role={ariaLabel && !hasInteractiveMistakes ? 'img' : undefined}
       style={patternStyle}
       {...props}
     >
       <div className="knit-pattern-view__fabric">
         {pattern.rows.flatMap((row, rowIndex) =>
           getPositionedStitches(pattern, row, rowAlign).map(
-            ({ stitch, stitchIndex, column }) =>
-              isStitchHidden(hiddenStitchCells, rowIndex, column, stitch) ? null : (
+            ({ stitch, stitchIndex, column }) => {
+              const columnIndex = column - 1
+              const cellKey = getStitchCellKey(rowIndex, columnIndex)
+              const isResolvedMistake = resolvedMistakeCells.has(cellKey)
+              const isResolvableMistake =
+                !isResolvedMistake &&
+                isGeneratedMistakeStitch(
+                  stitch,
+                  normalizedMistakeFrequency,
+                  rowIndex,
+                  columnIndex,
+                )
+              const renderedKind = isResolvableMistake ? 'mistake' : stitch.kind
+              const stitchClassName = getRevealClasses(
+                [
+                  'knit-pattern-view__stitch',
+                  isResolvableMistake
+                    ? 'knit-stitch-unit--resolvable-mistake'
+                    : undefined,
+                  isResolvedMistake
+                    ? 'knit-stitch-unit--resolved-mistake'
+                    : undefined,
+                ]
+                  .filter(Boolean)
+                  .join(' '),
+                pattern,
+                reveal,
+                rowIndex,
+                columnIndex,
+              )
+
+              return isStitchHidden(
+                hiddenStitchCells,
+                rowIndex,
+                column,
+                stitch,
+              ) ? null : (
                 <KnitStitchUnit
-                  className={getRevealClasses(
-                    'knit-pattern-view__stitch',
-                    pattern,
-                    reveal,
-                    rowIndex,
-                    column - 1,
-                  )}
+                  aria-label={
+                    isResolvableMistake
+                      ? 'Resolve mistake stitch'
+                      : undefined
+                  }
+                  className={stitchClassName}
                   color={getPatternStitchColor(pattern, stitch)}
                   key={`${rowIndex}-${stitchIndex}`}
-                  kind={getRenderedStitchKind(
-                    stitch,
-                    normalizedMistakeFrequency,
-                    rowIndex,
-                    column - 1,
-                  )}
+                  kind={renderedKind}
+                  onClick={
+                    isResolvableMistake
+                      ? () => resolveMistake(cellKey)
+                      : undefined
+                  }
+                  onKeyDown={
+                    isResolvableMistake
+                      ? (event) => handleMistakeKeyDown(event, cellKey, resolveMistake)
+                      : undefined
+                  }
+                  role={isResolvableMistake ? 'button' : undefined}
                   size="var(--knit-pattern-stitch-size)"
                   style={{
                     gridColumn: `${column} / span ${getKnitStitchSpan(stitch)}`,
                     gridRow: rowIndex + 1,
                   }}
+                  tabIndex={isResolvableMistake ? 0 : undefined}
                 />
-              ),
+              )
+            },
           ),
         )}
         {cables.map((cable, cableIndex) => (
@@ -276,19 +335,30 @@ function getPatternStitchColor(
   return stitch.color ?? pattern.palette?.colors[0]
 }
 
-function getRenderedStitchKind(
+function isGeneratedMistakeStitch(
   stitch: KnitStitch,
   mistakeFrequency: number,
   rowIndex: number,
   columnIndex: number,
-): StitchKind {
+): boolean {
   if (stitch.kind === 'mistake' || mistakeFrequency <= 0) {
-    return stitch.kind
+    return false
   }
 
   return getStitchRandomValue(rowIndex, columnIndex) < mistakeFrequency
-    ? 'mistake'
-    : stitch.kind
+}
+
+function handleMistakeKeyDown(
+  event: KeyboardEvent<SVGSVGElement>,
+  cellKey: string,
+  resolveMistake: (cellKey: string) => void,
+) {
+  if (event.key !== 'Enter' && event.key !== ' ') {
+    return
+  }
+
+  event.preventDefault()
+  resolveMistake(cellKey)
 }
 
 function normalizeMistakeFrequency(frequency: number): number {

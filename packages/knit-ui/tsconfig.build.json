@@ -8,5 +8,6 @@
     "outDir": "dist",
     "rootDir": "src",
     "noEmit": false
-  }
+  },
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"]
 }

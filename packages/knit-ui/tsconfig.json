@@ -2,7 +2,7 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
-    "types": ["react", "vite/client"],
+    "types": ["react", "vite/client", "vitest/globals", "@testing-library/jest-dom"],
     "allowImportingTsExtensions": true,
     "noEmit": true
   },

@@ -147,6 +147,39 @@ describe('KnitPattern stitch interaction', () => {
     )
   })
 
+  it('resolves generated mistakes before calling the supplied stitch click handler', () => {
+    const onStitchClick = vi.fn()
+
+    render(
+      <KnitPattern
+        mistakeFrequency={1}
+        onStitchClick={onStitchClick}
+        pattern={basicPattern}
+      />,
+    )
+
+    fireEvent.click(screen.getAllByRole('button', {
+      name: 'Resolve mistake stitch',
+    })[0])
+
+    expect(onStitchClick).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', {
+      name: 'knit stitch row 1, column 1',
+    }))
+
+    expect(onStitchClick).toHaveBeenCalledWith(
+      expect.objectContaining({
+        columnIndex: 0,
+        renderedKind: 'knit',
+        rowIndex: 0,
+        source: 'row',
+        stitch: basicPattern.rows[0]?.stitches[0],
+        stitchIndex: 0,
+      }),
+    )
+  })
+
   it('applies target positions to cable stitches by source row and column', () => {
     const onStitchClick = vi.fn()
 

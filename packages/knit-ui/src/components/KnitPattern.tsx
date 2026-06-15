@@ -513,8 +513,13 @@ function activateStitch(
   resolveMistake: ((cellKey: string) => void) | undefined,
   cellKey: string,
 ) {
+  if (resolveMistake) {
+    resolveMistake(cellKey)
+
+    return
+  }
+
   onStitchClick?.({ ...details, event })
-  resolveMistake?.(cellKey)
 }
 
 function normalizeMistakeFrequency(frequency: number): number {

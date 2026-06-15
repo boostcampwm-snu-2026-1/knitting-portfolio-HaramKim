@@ -1,14 +1,34 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
+
 describe('App scroll knitting demo', () => {
+  it('opens the click result modal when the clickable stitch is selected', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', {
+      name: 'knit stitch row 2, column 3',
+    }))
+
+    expect(screen.getByRole('dialog', { name: '클릭 가능' })).toBeInTheDocument()
+  })
+
   it('moves the knitted fabric down while scrolling and back up when scrolling back', async () => {
     render(<App />)
 
-    const pattern = screen.getByRole('img', {
-      name: 'scroll knitted cable pattern',
-    })
+    const pattern = screen.getByLabelText('scroll knitted cable pattern')
     const scrollRoot = pattern.closest<HTMLElement>('.knit-scroll-pattern')
 
     expect(scrollRoot).not.toBeNull()

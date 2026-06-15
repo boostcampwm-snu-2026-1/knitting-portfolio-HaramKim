@@ -68,6 +68,8 @@
 }
 
 .knit-stitch-unit {
+  --knit-stitch-stroke-width: 40px;
+
   display: inline-block;
   width: var(--knit-stitch-size, 48px);
   height: var(--knit-stitch-size, 48px);
@@ -76,14 +78,10 @@
   vertical-align: middle;
 }
 
-.knit-stitch-unit__fill {
-  fill: currentColor;
-}
-
-.knit-stitch-unit__mistake-thread {
+.knit-stitch-unit__thread {
   fill: none;
   stroke: currentColor;
-  stroke-width: 30px;
+  stroke-width: var(--knit-stitch-stroke-width);
 }
 
 .knit-scroll-pattern {

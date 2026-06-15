@@ -7,12 +7,14 @@ export interface KnitStitchUnitProps
   kind: StitchKind
   color?: string
   size?: number | string
+  strokeWidth?: number | string
 }
 
 export function KnitStitchUnit({
   kind,
   color,
   size = 48,
+  strokeWidth,
   className,
   style,
   ...props
@@ -24,9 +26,14 @@ export function KnitStitchUnit({
     ...style,
     '--knit-stitch-color': color,
     '--knit-stitch-size': typeof size === 'number' ? `${size}px` : size,
+    ...(strokeWidth
+      ? {
+          '--knit-stitch-stroke-width':
+            typeof strokeWidth === 'number' ? `${strokeWidth}px` : strokeWidth,
+        }
+      : {}),
   } as CSSProperties
   const ariaLabel = props['aria-label']
-  const viewBox = kind === 'mistake' ? '0 0 75 81' : '0 0 120 96'
 
   return (
     <svg
@@ -35,7 +42,7 @@ export function KnitStitchUnit({
       focusable="false"
       role={ariaLabel ? 'img' : undefined}
       style={stitchStyle}
-      viewBox={viewBox}
+      viewBox="0 0 120 120"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
@@ -50,12 +57,12 @@ function KnitShape() {
   return (
     <>
       <path
-        className="knit-stitch-unit__fill"
-        d="M20 90C18 66 10 47 2 36C15 23 24 11 34 0C48 19 58 42 60 88L20 90Z"
+        className="knit-stitch-unit__thread"
+        d="M22.6 28.4C22.6 28.4 36 44.1 40.9 56.1C45.8 68.1 48.6 91.6 48.6 91.6"
       />
       <path
-        className="knit-stitch-unit__fill"
-        d="M100 90C102 66 110 47 118 36C105 23 96 11 86 0C72 19 62 42 60 88L100 90Z"
+        className="knit-stitch-unit__thread"
+        d="M105.6 28.4C105.6 28.4 94.8 37.9 89.9 49.9C85 61.9 79.5 91.6 79.5 91.6"
       />
     </>
   )
@@ -64,8 +71,8 @@ function KnitShape() {
 function PurlShape() {
   return (
     <path
-      className="knit-stitch-unit__fill"
-      d="M8 34C28 26 45 22 60 22C75 22 92 26 112 34L101 68C84 62 70 59 60 59C50 59 36 62 19 68L8 34Z"
+      className="knit-stitch-unit__thread"
+      d="M20.1 65.8C20.1 65.8 48.1 54.4 66 53.2C83.9 52 112 61.6 112 61.6"
     />
   )
 }
@@ -73,8 +80,8 @@ function PurlShape() {
 function MistakeShape() {
   return (
     <path
-      className="knit-stitch-unit__mistake-thread"
-      d="M31.5085 70C11.9446 50.4444 5.09774 15 37.3779 15C69.658 15 63.7885 49.8333 42.2686 70"
+      className="knit-stitch-unit__thread"
+      d="M51.6 103.7C22.6 74.7 12.5 22.2 60.3 22.2C108.1 22.2 99.4 73.8 67.5 103.7"
     />
   )
 }

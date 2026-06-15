@@ -67,6 +67,26 @@
   transform-origin: center;
 }
 
+.knit-pattern-group {
+  --knit-pattern-group-gap: 24px;
+
+  display: flex;
+  max-width: 100%;
+}
+
+.knit-pattern-group--vertical {
+  align-items: center;
+  flex-direction: column;
+  gap: var(--knit-pattern-group-gap);
+}
+
+.knit-pattern-group--horizontal {
+  align-items: center;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--knit-pattern-group-gap);
+}
+
 .knit-stitch-unit {
   --knit-stitch-hover-scale: 1;
   --knit-stitch-stroke-width: 40px;
@@ -92,6 +112,10 @@
 }
 
 .knit-stitch-unit--resolvable-mistake {
+  cursor: pointer;
+}
+
+.knit-stitch-unit--interactive {
   cursor: pointer;
 }
 
@@ -145,16 +169,8 @@
   --knit-scroll-needle-right-y: 0px;
   --knit-scroll-needle-thickness: 24px;
   --knit-scroll-needle-width: min(46vw, 665px);
+  --knit-scroll-fabric-y: 0px;
   --knit-scroll-progress: 0;
-  --knit-scroll-total-rows: 1;
-  --knit-scroll-visible-rows: 0;
-  --knit-scroll-stitch-size: 48px;
-  --knit-scroll-stitch-overlap: 6px;
-  --knit-scroll-row-gap: 4px;
-  --knit-scroll-row-step: calc(
-    var(--knit-scroll-stitch-size) - var(--knit-scroll-stitch-overlap) +
-      var(--knit-scroll-row-gap)
-  );
 
   background: var(--knit-scroll-background);
   min-height: calc(100vh + var(--knit-scroll-length));
@@ -178,12 +194,7 @@
   justify-content: center;
   margin: 0 auto;
   padding-top: calc(var(--knit-scroll-needle-thickness) * 3.25);
-  transform: translateY(
-    calc(
-      (var(--knit-scroll-visible-rows) - var(--knit-scroll-total-rows)) *
-        var(--knit-scroll-row-step)
-    )
-  );
+  transform: translateY(var(--knit-scroll-fabric-y));
   transition: transform 180ms ease;
   width: 100%;
 }

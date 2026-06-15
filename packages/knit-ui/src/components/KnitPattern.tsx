@@ -1,11 +1,17 @@
 import { useState } from 'react'
-import type { CSSProperties, HTMLAttributes, KeyboardEvent } from 'react'
+import type {
+  CSSProperties,
+  HTMLAttributes,
+  KeyboardEvent,
+  MouseEvent,
+} from 'react'
 import type {
   KnitCable,
   KnitCableColor,
-  KnitPattern,
+  KnitPatternData,
   KnitRow,
   KnitStitch,
+  StitchKind,
 } from '../pattern'
 import {
   getKnitCableCount,
@@ -26,12 +32,28 @@ export type KnitPatternRevealOrder =
 
 export interface KnitPatternRevealOptions {
   direction?: 'top-to-bottom' | 'bottom-to-top'
+  rowOffset?: number
+  stitchOffset?: number
   order?: KnitPatternRevealOrder
   visibleStitchCount: number
 }
 
-export interface KnitPatternViewProps extends HTMLAttributes<HTMLDivElement> {
-  pattern: KnitPattern
+export type KnitStitchActivationEvent =
+  | KeyboardEvent<SVGSVGElement>
+  | MouseEvent<SVGSVGElement>
+
+export interface KnitStitchClickDetails {
+  rowIndex: number
+  stitchIndex: number
+  columnIndex: number
+  stitch: KnitStitch
+  renderedKind: StitchKind
+  source: 'row' | 'cable'
+  event: KnitStitchActivationEvent
+}
+
+export interface KnitPatternProps extends HTMLAttributes<HTMLDivElement> {
+  pattern: KnitPatternData
   density?: KnitPatternDensity
   stitchSize?: number | string
   stitchOverlap?: number | string
@@ -41,9 +63,10 @@ export interface KnitPatternViewProps extends HTMLAttributes<HTMLDivElement> {
   reveal?: KnitPatternRevealOptions
   allowIncompleteRows?: boolean
   mistakeFrequency?: number
+  onStitchClick?: (details: KnitStitchClickDetails) => void
 }
 
-export function KnitPatternView({
+export function KnitPattern({
   pattern,
   density = 'regular',
   stitchSize = 48,
@@ -54,10 +77,11 @@ export function KnitPatternView({
   reveal,
   allowIncompleteRows,
   mistakeFrequency = 0,
+  onStitchClick,
   className,
   style,
   ...props
-}: KnitPatternViewProps) {
+}: KnitPatternProps) {
   const [resolvedMistakeCells, setResolvedMistakeCells] = useState<Set<string>>(
     () => new Set(),
   )
@@ -84,6 +108,7 @@ export function KnitPatternView({
   const hiddenStitchCells = getHiddenStitchCells(cables)
   const normalizedMistakeFrequency = normalizeMistakeFrequency(mistakeFrequency)
   const hasInteractiveMistakes = normalizedMistakeFrequency > 0
+  const hasInteractiveStitches = hasInteractiveMistakes || !!onStitchClick
 
   function resolveMistake(cellKey: string) {
     setResolvedMistakeCells((currentCells) => {
@@ -100,11 +125,11 @@ export function KnitPatternView({
 
   return (
     <div
-      aria-hidden={ariaLabel || hasInteractiveMistakes ? undefined : true}
+      aria-hidden={ariaLabel || hasInteractiveStitches ? undefined : true}
       className={classes}
       data-row-count={pattern.rows.length}
       data-valid={validation.valid ? 'true' : 'false'}
-      role={ariaLabel && !hasInteractiveMistakes ? 'img' : undefined}
+      role={ariaLabel && !hasInteractiveStitches ? 'img' : undefined}
       style={patternStyle}
       {...props}
     >
@@ -124,9 +149,11 @@ export function KnitPatternView({
                   columnIndex,
                 )
               const renderedKind = isResolvableMistake ? 'mistake' : stitch.kind
+              const isInteractive = isResolvableMistake || !!onStitchClick
               const stitchClassName = getRevealClasses(
                 [
                   'knit-pattern-view__stitch',
+                  isInteractive ? 'knit-stitch-unit--interactive' : undefined,
                   isResolvableMistake
                     ? 'knit-stitch-unit--resolvable-mistake'
                     : undefined,
@@ -152,29 +179,59 @@ export function KnitPatternView({
                   aria-label={
                     isResolvableMistake
                       ? 'Resolve mistake stitch'
-                      : undefined
+                      : isInteractive
+                        ? `${renderedKind} stitch row ${rowIndex + 1}, column ${columnIndex + 1}`
+                        : undefined
                   }
                   className={stitchClassName}
                   color={getPatternStitchColor(pattern, stitch)}
                   key={`${rowIndex}-${stitchIndex}`}
                   kind={renderedKind}
                   onClick={
-                    isResolvableMistake
-                      ? () => resolveMistake(cellKey)
+                    isInteractive
+                      ? (event) =>
+                          handleStitchClick(
+                            event,
+                            {
+                              columnIndex,
+                              renderedKind,
+                              rowIndex,
+                              source: 'row',
+                              stitch,
+                              stitchIndex,
+                            },
+                            onStitchClick,
+                            isResolvableMistake ? resolveMistake : undefined,
+                            cellKey,
+                          )
                       : undefined
                   }
                   onKeyDown={
-                    isResolvableMistake
-                      ? (event) => handleMistakeKeyDown(event, cellKey, resolveMistake)
+                    isInteractive
+                      ? (event) =>
+                          handleStitchKeyDown(
+                            event,
+                            {
+                              columnIndex,
+                              renderedKind,
+                              rowIndex,
+                              source: 'row',
+                              stitch,
+                              stitchIndex,
+                            },
+                            onStitchClick,
+                            isResolvableMistake ? resolveMistake : undefined,
+                            cellKey,
+                          )
                       : undefined
                   }
-                  role={isResolvableMistake ? 'button' : undefined}
+                  role={isInteractive ? 'button' : undefined}
                   size="var(--knit-pattern-stitch-size)"
                   style={{
                     gridColumn: `${column} / span ${getKnitStitchSpan(stitch)}`,
                     gridRow: rowIndex + 1,
                   }}
-                  tabIndex={isResolvableMistake ? 0 : undefined}
+                  tabIndex={isInteractive ? 0 : undefined}
                 />
               )
             },
@@ -186,6 +243,7 @@ export function KnitPatternView({
             key={`${cable.row}-${cable.leftStartStitch}-${cableIndex}`}
             mistakeFrequency={normalizedMistakeFrequency}
             pattern={pattern}
+            onStitchClick={onStitchClick}
             reveal={reveal}
             resolveMistake={resolveMistake}
             resolvedMistakeCells={resolvedMistakeCells}
@@ -268,7 +326,7 @@ function getStitchCellKey(row: number, column: number): string {
 
 function getRevealClasses(
   className: string,
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   reveal: KnitPatternRevealOptions | undefined,
   rowIndex: number,
   columnIndex: number,
@@ -283,6 +341,8 @@ function getRevealClasses(
     columnIndex,
     reveal.direction ?? 'top-to-bottom',
     reveal.order ?? 'left-to-right',
+    reveal.rowOffset ?? 0,
+    reveal.stitchOffset ?? 0,
   )
   const revealClass =
     revealIndex < reveal.visibleStitchCount
@@ -293,11 +353,13 @@ function getRevealClasses(
 }
 
 function getRevealIndex(
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   rowIndex: number,
   columnIndex: number,
   direction: KnitPatternRevealOptions['direction'],
   order: KnitPatternRevealOrder,
+  rowOffset: number,
+  stitchOffset: number,
 ): number {
   const revealRowIndex =
     direction === 'bottom-to-top'
@@ -305,13 +367,19 @@ function getRevealIndex(
       : rowIndex
 
   return (
+    stitchOffset +
     revealRowIndex * pattern.castOn +
-    getRevealColumnIndex(pattern, revealRowIndex, columnIndex, order)
+    getRevealColumnIndex(
+      pattern,
+      revealRowIndex + rowOffset,
+      columnIndex,
+      order,
+    )
   )
 }
 
 function getRevealColumnIndex(
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   revealRowIndex: number,
   columnIndex: number,
   order: KnitPatternRevealOrder,
@@ -332,7 +400,7 @@ function toCssSize(value: number | string): string {
 }
 
 function getPatternStitchColor(
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   stitch: KnitStitch,
 ): string | undefined {
   return stitch.color ?? pattern.palette?.colors[0]
@@ -351,17 +419,40 @@ function isGeneratedMistakeStitch(
   return getStitchRandomValue(rowIndex, columnIndex) < mistakeFrequency
 }
 
-function handleMistakeKeyDown(
+function handleStitchKeyDown(
   event: KeyboardEvent<SVGSVGElement>,
+  details: Omit<KnitStitchClickDetails, 'event'>,
+  onStitchClick: ((details: KnitStitchClickDetails) => void) | undefined,
+  resolveMistake: ((cellKey: string) => void) | undefined,
   cellKey: string,
-  resolveMistake: (cellKey: string) => void,
 ) {
   if (event.key !== 'Enter' && event.key !== ' ') {
     return
   }
 
   event.preventDefault()
-  resolveMistake(cellKey)
+  activateStitch(event, details, onStitchClick, resolveMistake, cellKey)
+}
+
+function handleStitchClick(
+  event: MouseEvent<SVGSVGElement>,
+  details: Omit<KnitStitchClickDetails, 'event'>,
+  onStitchClick: ((details: KnitStitchClickDetails) => void) | undefined,
+  resolveMistake: ((cellKey: string) => void) | undefined,
+  cellKey: string,
+) {
+  activateStitch(event, details, onStitchClick, resolveMistake, cellKey)
+}
+
+function activateStitch(
+  event: KnitStitchActivationEvent,
+  details: Omit<KnitStitchClickDetails, 'event'>,
+  onStitchClick: ((details: KnitStitchClickDetails) => void) | undefined,
+  resolveMistake: ((cellKey: string) => void) | undefined,
+  cellKey: string,
+) {
+  onStitchClick?.({ ...details, event })
+  resolveMistake?.(cellKey)
 }
 
 function normalizeMistakeFrequency(frequency: number): number {
@@ -383,7 +474,7 @@ function getStitchRandomValue(rowIndex: number, columnIndex: number): number {
 }
 
 function getPositionedStitches(
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   row: KnitRow,
   rowAlign: KnitPatternRowAlign,
 ) {
@@ -403,7 +494,7 @@ function getPositionedStitches(
 }
 
 function getRowStartColumn(
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   row: KnitRow,
   rowAlign: KnitPatternRowAlign,
 ): number {
@@ -419,7 +510,8 @@ function getRowStartColumn(
 interface KnitCableOverlayProps {
   cable: KnitCable
   mistakeFrequency: number
-  pattern: KnitPattern
+  onStitchClick?: (details: KnitStitchClickDetails) => void
+  pattern: KnitPatternData
   reveal?: KnitPatternRevealOptions
   resolveMistake: (cellKey: string) => void
   resolvedMistakeCells: Set<string>
@@ -429,6 +521,7 @@ interface KnitCableOverlayProps {
 function KnitCableOverlay({
   cable,
   mistakeFrequency,
+  onStitchClick,
   pattern,
   reveal,
   resolveMistake,
@@ -448,7 +541,7 @@ function KnitCableOverlay({
 
   return (
     <div
-      aria-hidden={mistakeFrequency > 0 ? undefined : true}
+      aria-hidden={mistakeFrequency > 0 || onStitchClick ? undefined : true}
       className={`knit-pattern-view__cable knit-pattern-view__cable--${cable.cross}`}
       style={style}
     >
@@ -457,7 +550,13 @@ function KnitCableOverlay({
         const sourceColumnIndex = cable.leftStartStitch + segment.sourceColumnIndex
         const revealColumnIndex = cable.leftStartStitch + segment.columnIndex
         const cellKey = getStitchCellKey(rowIndex, sourceColumnIndex)
-        const sourceStitch = getCableSegmentStitch(pattern, cable, segment)
+        const sourcePosition = getCableSegmentStitchPosition(
+          pattern,
+          cable,
+          segment,
+        )
+        const sourceStitch = sourcePosition?.stitch
+        const stitchIndex = sourcePosition?.stitchIndex ?? segment.sourceColumnIndex
         const baseKind = sourceStitch?.kind ?? 'knit'
         const isResolvedMistake = resolvedMistakeCells.has(cellKey)
         const isResolvableMistake =
@@ -469,10 +568,13 @@ function KnitCableOverlay({
             rowIndex,
             sourceColumnIndex,
           )
+        const renderedKind = isResolvableMistake ? 'mistake' : baseKind
+        const isInteractive = isResolvableMistake || !!onStitchClick
         const stitchClassName = getRevealClasses(
           [
             'knit-pattern-view__cable-stitch',
             `knit-pattern-view__cable-stitch--${segment.strand}`,
+            isInteractive ? 'knit-stitch-unit--interactive' : undefined,
             isResolvableMistake
               ? 'knit-stitch-unit--resolvable-mistake'
               : undefined,
@@ -491,21 +593,55 @@ function KnitCableOverlay({
         return (
           <KnitStitchUnit
             aria-label={
-              isResolvableMistake ? 'Resolve mistake cable stitch' : undefined
+              isResolvableMistake
+                ? 'Resolve mistake cable stitch'
+                : isInteractive
+                  ? `${renderedKind} cable stitch row ${rowIndex + 1}, column ${sourceColumnIndex + 1}`
+                  : undefined
             }
             className={stitchClassName}
             color={getCableSegmentColor(pattern, cable, segment)}
             key={`${segment.strand}-${segment.laneIndex}-${segment.rowIndex}`}
-            kind={isResolvableMistake ? 'mistake' : baseKind}
+            kind={renderedKind}
             onClick={
-              isResolvableMistake ? () => resolveMistake(cellKey) : undefined
-            }
-            onKeyDown={
-              isResolvableMistake
-                ? (event) => handleMistakeKeyDown(event, cellKey, resolveMistake)
+              isInteractive && sourceStitch
+                ? (event) =>
+                    handleStitchClick(
+                      event,
+                      {
+                        columnIndex: sourceColumnIndex,
+                        renderedKind,
+                        rowIndex,
+                        source: 'cable',
+                        stitch: sourceStitch,
+                        stitchIndex,
+                      },
+                      onStitchClick,
+                      isResolvableMistake ? resolveMistake : undefined,
+                      cellKey,
+                    )
                 : undefined
             }
-            role={isResolvableMistake ? 'button' : undefined}
+            onKeyDown={
+              isInteractive && sourceStitch
+                ? (event) =>
+                    handleStitchKeyDown(
+                      event,
+                      {
+                        columnIndex: sourceColumnIndex,
+                        renderedKind,
+                        rowIndex,
+                        source: 'cable',
+                        stitch: sourceStitch,
+                        stitchIndex,
+                      },
+                      onStitchClick,
+                      isResolvableMistake ? resolveMistake : undefined,
+                      cellKey,
+                    )
+                : undefined
+            }
+            role={isInteractive ? 'button' : undefined}
             size="var(--knit-pattern-stitch-size)"
             style={{
               left: `${segment.left}%`,
@@ -513,7 +649,7 @@ function KnitCableOverlay({
               transform: `translate(-50%, -50%) rotate(${segment.rotate}deg) scaleY(${segment.scaleY}) scale(var(--knit-stitch-hover-scale))`,
               zIndex: segment.zIndex,
             }}
-            tabIndex={isResolvableMistake ? 0 : undefined}
+            tabIndex={isInteractive ? 0 : undefined}
           />
         )
       })}
@@ -648,7 +784,7 @@ function clampNumber(value: number, min: number, max: number): number {
 }
 
 function getCableSegmentColor(
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   cable: KnitCable,
   segment: KnitCableStitchSegment,
 ): string | undefined {
@@ -693,46 +829,60 @@ function isCableColumnColor(
 }
 
 function getBaseCableColor(
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   cable: KnitCable,
   sourceColumnIndex: number,
 ): string | undefined {
   const row = pattern.rows[cable.row]
-  const stitch = row
-    ? getStitchAtColumn(row.stitches, cable.leftStartStitch + sourceColumnIndex)
+  const stitchPosition = row
+    ? getStitchPositionAtColumn(
+        row.stitches,
+        cable.leftStartStitch + sourceColumnIndex,
+      )
     : undefined
 
-  return stitch ? getPatternStitchColor(pattern, stitch) : pattern.palette?.colors[0]
+  return stitchPosition
+    ? getPatternStitchColor(pattern, stitchPosition.stitch)
+    : pattern.palette?.colors[0]
 }
 
-function getCableSegmentStitch(
-  pattern: KnitPattern,
+function getCableSegmentStitchPosition(
+  pattern: KnitPatternData,
   cable: KnitCable,
   segment: KnitCableStitchSegment,
-): KnitStitch | undefined {
+): KnitStitchPosition | undefined {
   const row = pattern.rows[cable.row + segment.rowIndex]
 
   return row
-    ? getStitchAtColumn(
+    ? getStitchPositionAtColumn(
         row.stitches,
         cable.leftStartStitch + segment.sourceColumnIndex,
       )
     : undefined
 }
 
-function getStitchAtColumn(
+interface KnitStitchPosition {
+  stitch: KnitStitch
+  stitchIndex: number
+}
+
+function getStitchPositionAtColumn(
   stitches: KnitStitch[],
   targetColumn: number,
-): KnitStitch | undefined {
+): KnitStitchPosition | undefined {
   let column = 0
 
-  return stitches.find((stitch) => {
+  for (const [stitchIndex, stitch] of stitches.entries()) {
     const span = getKnitStitchSpan(stitch)
     const isTargetStitch =
       targetColumn >= column && targetColumn < column + span
 
     column += span
 
-    return isTargetStitch
-  })
+    if (isTargetStitch) {
+      return { stitch, stitchIndex }
+    }
+  }
+
+  return undefined
 }

@@ -42,7 +42,7 @@ export interface KnitAccident {
   stitch: number
 }
 
-export interface KnitPattern {
+export interface KnitPatternData {
   castOn: number
   rows: KnitRow[]
   palette?: KnitPalette

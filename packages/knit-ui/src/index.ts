@@ -1,4 +1,5 @@
-export { KnitPatternView } from './components/KnitPatternView'
+export { KnitPattern } from './components/KnitPattern'
+export { KnitPatternGroup } from './components/KnitPatternGroup'
 export { KnitScrollPattern } from './components/KnitScrollPattern'
 export { KnitStitchUnit } from './components/KnitStitchUnit'
 export { defaultKnitPalette } from './pattern'
@@ -11,11 +12,17 @@ export {
 } from './pattern'
 export type {
   KnitPatternDensity,
+  KnitPatternProps,
   KnitPatternRevealOptions,
   KnitPatternRevealOrder,
   KnitPatternRowAlign,
-  KnitPatternViewProps,
-} from './components/KnitPatternView'
+  KnitStitchActivationEvent,
+  KnitStitchClickDetails,
+} from './components/KnitPattern'
+export type {
+  KnitPatternGroupDirection,
+  KnitPatternGroupProps,
+} from './components/KnitPatternGroup'
 export type {
   KnitScrollNeedleOptions,
   KnitScrollPatternProps,
@@ -29,7 +36,7 @@ export type {
   KnitCable,
   KnitCableColor,
   KnitPalette,
-  KnitPattern,
+  KnitPatternData,
   KnitPatternValidationIssue,
   KnitPatternValidationResult,
   KnitRow,

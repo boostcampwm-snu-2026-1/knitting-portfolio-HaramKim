@@ -6,7 +6,7 @@ export type {
   KnitCable,
   KnitCableColor,
   KnitPalette,
-  KnitPattern,
+  KnitPatternData,
   KnitPatternValidationIssue,
   KnitPatternValidationResult,
   KnitRow,

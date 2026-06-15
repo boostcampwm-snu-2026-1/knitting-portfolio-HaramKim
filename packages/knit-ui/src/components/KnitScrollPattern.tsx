@@ -1,16 +1,23 @@
 import {
+  Children,
+  cloneElement,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react'
-import type { CSSProperties, RefObject } from 'react'
-import type { KnitPattern } from '../pattern'
+import type {
+  CSSProperties,
+  HTMLAttributes,
+  ReactElement,
+  ReactNode,
+  RefObject,
+} from 'react'
 import {
-  KnitPatternView,
+  KnitPattern,
+  type KnitPatternProps,
   type KnitPatternRevealOrder,
-  type KnitPatternViewProps,
-} from './KnitPatternView'
+} from './KnitPattern'
+import type { KnitPatternGroupDirection } from './KnitPatternGroup'
 import '../styles/knit-ui.css'
 
 export type KnitScrollStitchOrder = KnitPatternRevealOrder
@@ -23,42 +30,35 @@ export interface KnitScrollNeedleOptions {
   angle?: number
 }
 
-export interface KnitScrollPatternProps
-  extends Omit<KnitPatternViewProps, 'aria-hidden' | 'role' | 'reveal'> {
+export interface KnitScrollPatternProps extends HTMLAttributes<HTMLDivElement> {
   needle?: KnitScrollNeedleOptions
   scrollLength?: number | string
   stitchOrder?: KnitScrollStitchOrder
 }
 
 export function KnitScrollPattern({
+  children,
   className,
-  density = 'regular',
-  gap,
   needle,
-  pattern,
-  rowGap,
   scrollLength = '160vh',
   stitchOrder = 'alternating',
-  stitchOverlap,
-  stitchSize = 48,
   style,
-  ...patternViewProps
+  ...props
 }: KnitScrollPatternProps) {
   const rootRef = useRef<HTMLDivElement>(null)
   const progress = useKnitScrollProgress(rootRef)
-  const visibleStitchCount = useMemo(
-    () => Math.ceil(getScrollableStitchCount(pattern) * progress),
-    [pattern, progress],
+  const totalStitchCount = getScrollableStitchCount(children)
+  const visibleStitchCount = Math.ceil(totalStitchCount * progress)
+  const hiddenFabricOffset = getHiddenFabricOffset(children, visibleStitchCount)
+  const revealedChildren = revealScrollPatterns(
+    children,
+    visibleStitchCount,
+    stitchOrder,
   )
-  const totalStitchCount = getScrollableStitchCount(pattern)
-  const stitchMotionProgress = getLoopProgress(progress * totalStitchCount*0.25)
+  const stitchMotionProgress = getLoopProgress(progress * 8)
   const needlePierceProgress = Math.sin(stitchMotionProgress * Math.PI)
   const needleLiftProgress = Math.sin(stitchMotionProgress * Math.PI * 2)
   const needleAngle = needle?.angle ?? 13.63
-  const visibleRowCount = Math.min(
-    pattern.rows.length,
-    Math.max(1, Math.ceil(visibleStitchCount / pattern.castOn)),
-  )
   const classes = ['knit-scroll-pattern', className].filter(Boolean).join(' ')
   const scrollStyle = {
     ...style,
@@ -69,42 +69,21 @@ export function KnitScrollPattern({
     '--knit-scroll-needle-right-angle': `${needleAngle + needlePierceProgress * -5}deg`,
     '--knit-scroll-needle-right-x': `${needlePierceProgress * -34}px`,
     '--knit-scroll-needle-right-y': `${needleLiftProgress * 12}px`,
-    '--knit-scroll-total-rows': pattern.rows.length,
-    '--knit-scroll-visible-rows': visibleRowCount,
     '--knit-scroll-length': toCssSize(scrollLength),
-    '--knit-scroll-stitch-size': toCssSize(stitchSize),
-    '--knit-scroll-stitch-overlap': toCssSize(stitchOverlap ?? 6),
-    '--knit-scroll-row-gap': toCssSize(
-      rowGap ?? gap ?? getDensityGap(density),
-    ),
     '--knit-scroll-needle-angle': `${needleAngle}deg`,
     '--knit-scroll-needle-color': needle?.color,
     '--knit-scroll-needle-highlight': needle?.highlightColor,
     '--knit-scroll-needle-thickness': needle?.thickness
       ? toCssSize(needle.thickness)
       : undefined,
+    '--knit-scroll-fabric-y': `${hiddenFabricOffset * -1}px`,
   } as CSSProperties
 
   return (
-    <div className={classes} ref={rootRef} style={scrollStyle}>
+    <div className={classes} ref={rootRef} style={scrollStyle} {...props}>
       <div className="knit-scroll-pattern__stage">
         {needle?.visible ? <KnitScrollNeedles /> : null}
-        <div className="knit-scroll-pattern__fabric">
-          <KnitPatternView
-            {...patternViewProps}
-            density={density}
-            gap={gap}
-            pattern={pattern}
-            reveal={{
-              direction: 'bottom-to-top',
-              order: stitchOrder,
-              visibleStitchCount,
-            }}
-            rowGap={rowGap}
-            stitchOverlap={stitchOverlap}
-            stitchSize={stitchSize}
-          />
-        </div>
+        <div className="knit-scroll-pattern__fabric">{revealedChildren}</div>
       </div>
     </div>
   )
@@ -166,15 +145,190 @@ function useKnitScrollProgress(rootRef: RefObject<HTMLDivElement | null>) {
   return progress
 }
 
-function getScrollableStitchCount(pattern: KnitPattern): number {
-  return pattern.castOn * pattern.rows.length
-}
-
 function toCssSize(value: number | string): string {
   return typeof value === 'number' ? `${value}px` : value
 }
 
-function getDensityGap(density: KnitPatternViewProps['density']): number {
+function getScrollableStitchCount(children: ReactNode): number {
+  return Children.toArray(children).reduce<number>(
+    (count, child) => count + getNodeStitchCount(child),
+    0,
+  )
+}
+
+function getNodeStitchCount(node: ReactNode): number {
+  if (!isElement(node)) {
+    return 0
+  }
+
+  if (isKnitPatternElement(node)) {
+    return getPatternStitchCount(node.props.pattern)
+  }
+
+  return getScrollableStitchCount(node.props.children)
+}
+
+function getPatternStitchCount(pattern: KnitPatternProps['pattern']): number {
+  return pattern.castOn * pattern.rows.length
+}
+
+function getHiddenFabricOffset(
+  children: ReactNode,
+  visibleStitchCount: number,
+): number {
+  let remainingStitchCount = visibleStitchCount
+  const childNodes = Children.toArray(children)
+  let hiddenOffset = 0
+
+  for (let index = childNodes.length - 1; index >= 0; index -= 1) {
+    const [nodeOffset, nextRemainingStitchCount] = getNodeHiddenOffset(
+      childNodes[index],
+      remainingStitchCount,
+    )
+
+    remainingStitchCount = nextRemainingStitchCount
+    hiddenOffset += nodeOffset
+  }
+
+  return hiddenOffset
+}
+
+function getNodeHiddenOffset(
+  node: ReactNode,
+  remainingStitchCount: number,
+): [number, number] {
+  if (!isElement(node)) {
+    return [0, remainingStitchCount]
+  }
+
+  if (isKnitPatternElement(node)) {
+    const pattern = node.props.pattern
+    const patternStitchCount = getPatternStitchCount(pattern)
+    const visibleStitchCount = clampNumber(
+      remainingStitchCount,
+      0,
+      patternStitchCount,
+    )
+    const visibleRowCount = Math.min(
+      pattern.rows.length,
+      Math.max(0, Math.ceil(visibleStitchCount / pattern.castOn)),
+    )
+    const hiddenRowCount = pattern.rows.length - visibleRowCount
+
+    return [
+      getPatternHiddenOffset(node.props, hiddenRowCount),
+      remainingStitchCount - patternStitchCount,
+    ]
+  }
+
+  if (!node.props.children) {
+    return [0, remainingStitchCount]
+  }
+
+  return getChildNodesHiddenOffset(
+    node.props.children,
+    remainingStitchCount,
+    getVerticalGroupGap(node),
+  )
+}
+
+function getChildNodesHiddenOffset(
+  children: ReactNode,
+  visibleStitchCount: number,
+  gap = 0,
+): [number, number] {
+  let remainingStitchCount = visibleStitchCount
+  const childNodes = Children.toArray(children)
+  let hiddenOffset = 0
+
+  for (let index = childNodes.length - 1; index >= 0; index -= 1) {
+    const [nodeOffset, nextRemainingStitchCount] = getNodeHiddenOffset(
+      childNodes[index],
+      remainingStitchCount,
+    )
+
+    remainingStitchCount = nextRemainingStitchCount
+    hiddenOffset += nodeOffset
+
+    if (index > 0 && remainingStitchCount < getPreviousSiblingStitchCount(childNodes, index)) {
+      hiddenOffset += gap
+    }
+  }
+
+  return [hiddenOffset, remainingStitchCount]
+}
+
+function getPreviousSiblingStitchCount(
+  childNodes: ReactNode[],
+  endIndex: number,
+): number {
+  return childNodes
+    .slice(0, endIndex)
+    .reduce<number>((count, child) => count + getNodeStitchCount(child), 0)
+}
+
+function getVerticalGroupGap(node: ReactElement<KnitScrollElementProps>): number {
+  if (node.props.direction === 'horizontal') {
+    return 0
+  }
+
+  return getNumericSize(node.props.gap, 24)
+}
+
+function getPatternRowStep(props: KnitPatternProps): number {
+  return (
+    getNumericSize(props.stitchSize, 48) -
+    getNumericSize(props.stitchOverlap, 6) +
+    getNumericSize(props.rowGap ?? props.gap, getDensityGap(props.density))
+  )
+}
+
+function getPatternHiddenOffset(
+  props: KnitPatternProps,
+  hiddenRowCount: number,
+): number {
+  if (hiddenRowCount <= 0) {
+    return 0
+  }
+
+  if (hiddenRowCount >= props.pattern.rows.length) {
+    return getPatternHeight(props)
+  }
+
+  return hiddenRowCount * getPatternRowStep(props)
+}
+
+function getPatternHeight(props: KnitPatternProps): number {
+  const rowCount = props.pattern.rows.length
+
+  if (rowCount <= 0) {
+    return 0
+  }
+
+  return (
+    (rowCount - 1) * getPatternRowStep(props) +
+    getNumericSize(props.stitchSize, 48)
+  )
+}
+
+function getNumericSize(
+  value: number | string | undefined,
+  fallback: number,
+): number {
+  if (typeof value === 'number') {
+    return value
+  }
+
+  if (typeof value === 'string') {
+    const parsedValue = Number.parseFloat(value)
+
+    return Number.isFinite(parsedValue) ? parsedValue : fallback
+  }
+
+  return fallback
+}
+
+function getDensityGap(density: KnitPatternProps['density']): number {
   if (density === 'compact') {
     return 2
   }
@@ -184,6 +338,123 @@ function getDensityGap(density: KnitPatternViewProps['density']): number {
   }
 
   return 4
+}
+
+function revealScrollPatterns(
+  children: ReactNode,
+  visibleStitchCount: number,
+  stitchOrder: KnitScrollStitchOrder,
+): ReactNode {
+  let revealContext: KnitScrollRevealContext = {
+    rowOffset: 0,
+    stitchOffset: 0,
+    visibleStitchCount,
+  }
+  const childNodes = Children.toArray(children)
+  const revealedChildren: ReactNode[] = [...childNodes]
+
+  for (let index = childNodes.length - 1; index >= 0; index -= 1) {
+    const [revealedChild, nextRevealContext] = revealScrollPatternNode(
+      childNodes[index],
+      revealContext,
+      stitchOrder,
+    )
+
+    revealContext = nextRevealContext
+    revealedChildren[index] = revealedChild
+  }
+
+  return revealedChildren
+}
+
+interface KnitScrollRevealContext {
+  rowOffset: number
+  stitchOffset: number
+  visibleStitchCount: number
+}
+
+function revealScrollPatternNode(
+  node: ReactNode,
+  revealContext: KnitScrollRevealContext,
+  stitchOrder: KnitScrollStitchOrder,
+): [ReactNode, KnitScrollRevealContext] {
+  if (!isElement(node)) {
+    return [node, revealContext]
+  }
+
+  if (isKnitPatternElement(node)) {
+    return [
+      cloneElement(node, {
+        reveal: {
+          ...node.props.reveal,
+          direction: node.props.reveal?.direction ?? 'bottom-to-top',
+          order: node.props.reveal?.order ?? stitchOrder,
+          rowOffset: revealContext.rowOffset,
+          stitchOffset: revealContext.stitchOffset,
+          visibleStitchCount: revealContext.visibleStitchCount,
+        },
+      }),
+      {
+        rowOffset: revealContext.rowOffset + node.props.pattern.rows.length,
+        stitchOffset:
+          revealContext.stitchOffset + getPatternStitchCount(node.props.pattern),
+        visibleStitchCount: revealContext.visibleStitchCount,
+      },
+    ]
+  }
+
+  if (!node.props.children) {
+    return [node, revealContext]
+  }
+
+  const [revealedChildren, nextRevealContext] = revealChildNodes(
+    node.props.children,
+    revealContext,
+    stitchOrder,
+  )
+
+  return [
+    cloneElement(node, undefined, revealedChildren),
+    nextRevealContext,
+  ]
+}
+
+function revealChildNodes(
+  children: ReactNode,
+  revealContext: KnitScrollRevealContext,
+  stitchOrder: KnitScrollStitchOrder,
+): [ReactNode, KnitScrollRevealContext] {
+  let nextRevealContext = revealContext
+  const childNodes = Children.toArray(children)
+  const revealedChildren: ReactNode[] = [...childNodes]
+
+  for (let index = childNodes.length - 1; index >= 0; index -= 1) {
+    const [revealedChild, childRevealContext] = revealScrollPatternNode(
+      childNodes[index],
+      nextRevealContext,
+      stitchOrder,
+    )
+
+    nextRevealContext = childRevealContext
+    revealedChildren[index] = revealedChild
+  }
+
+  return [revealedChildren, nextRevealContext]
+}
+
+interface KnitScrollElementProps extends Partial<KnitPatternProps> {
+  children?: ReactNode
+  direction?: KnitPatternGroupDirection
+}
+
+function isElement(node: ReactNode): node is ReactElement<KnitScrollElementProps> {
+  return typeof node === 'object' && node !== null && 'type' in node
+}
+
+function isKnitPatternElement(
+  node: ReactElement<KnitScrollElementProps>,
+): node is ReactElement<KnitPatternProps> {
+  return node.type === KnitPattern && !!node.props.pattern
 }
 
 function clampNumber(value: number, min: number, max: number): number {

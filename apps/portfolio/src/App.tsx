@@ -1,8 +1,13 @@
-import { KnitPatternView, KnitScrollPattern, KnitStitchUnit } from '@knit-ui/core'
-import type { KnitPattern, StitchKind } from '@knit-ui/core'
+import {
+  KnitPattern,
+  KnitPatternGroup,
+  KnitScrollPattern,
+  KnitStitchUnit,
+} from '@knit-ui/core'
+import type { KnitPatternData, StitchKind } from '@knit-ui/core'
 import './App.css'
 
-const stockinettePattern: KnitPattern = {
+const stockinettePattern: KnitPatternData = {
   ...makePattern(
     [
       makeRowKinds('knit', 8),
@@ -16,7 +21,7 @@ const stockinettePattern: KnitPattern = {
   },
 }
 
-const cablePattern: KnitPattern = {
+const cablePattern: KnitPatternData = {
   ...makePattern(
     [
       makeRowKinds('purl', 2).concat(
@@ -44,7 +49,7 @@ const cablePattern: KnitPattern = {
   ],
 }
 
-const colorworkPattern: KnitPattern = {
+const colorworkPattern: KnitPatternData = {
   castOn: 10,
   palette: {
     colors: ['#f2f2f2', '#bfbfbf', '#7d7d7d', '#434343', '#070707'],
@@ -83,7 +88,7 @@ function makePattern(
   rows: StitchKind[][],
   r_count: number,
   c_count = 1,
-): KnitPattern {
+): KnitPatternData {
   const repeatedRows = rows.map((row) => repeatRow(row, r_count))
 
   return {
@@ -123,9 +128,9 @@ function App() {
         <article className="sample">
           <div className="sample-copy">
             <h2>Basic rows</h2>
-            <p>Alternating knit and purl rows rendered from `KnitPattern.rows`.</p>
+            <p>Alternating knit and purl rows rendered from `KnitPatternData.rows`.</p>
           </div>
-          <KnitPatternView
+          <KnitPattern
             aria-label="basic knit and purl pattern"
             mistakeFrequency={0.18}
             pattern={stockinettePattern}
@@ -136,9 +141,9 @@ function App() {
         <article className="sample sample--feature">
           <div className="sample-copy">
             <h2>Cable overlay</h2>
-            <p>`KnitPattern.cables` spans four stitches across three rows.</p>
+            <p>`KnitPatternData.cables` spans four stitches across three rows.</p>
           </div>
-          <KnitPatternView
+          <KnitPattern
             aria-label="left cable pattern"
             gap={2}
             pattern={cablePattern}
@@ -152,7 +157,7 @@ function App() {
             <h2>Manual colorwork</h2>
             <p>Per-stitch colors override the pattern palette for quick visual checks.</p>
           </div>
-          <KnitPatternView
+          <KnitPattern
             aria-label="manual grayscale colorwork pattern"
             density="compact"
             pattern={colorworkPattern}
@@ -168,14 +173,24 @@ function App() {
         </div>
         <KnitScrollPattern
           aria-label="scroll knitted cable pattern"
-          gap={2}
           needle={{ visible: true }}
-          mistakeFrequency={0.08}
-          pattern={cablePattern}
-          rowGap={1}
-          scrollLength="180vh"
-          stitchSize={44}
-        />
+          scrollLength="500vh"
+        >
+          <KnitPatternGroup gap={32}>
+            <KnitPattern
+              gap={2}
+              mistakeFrequency={0.08}
+              pattern={cablePattern}
+              rowGap={1}
+              stitchSize={44}
+            />
+            <KnitPattern
+              density="compact"
+              pattern={colorworkPattern}
+              stitchSize={34}
+            />
+          </KnitPatternGroup>
+        </KnitScrollPattern>
       </section>
     </main>
   )

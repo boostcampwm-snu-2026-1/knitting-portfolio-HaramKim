@@ -36,6 +36,22 @@
   justify-self: center;
 }
 
+.knit-pattern-view__reveal-stitch {
+  transition:
+    opacity 180ms ease,
+    filter 180ms ease;
+}
+
+.knit-pattern-view__reveal-stitch--hidden {
+  filter: blur(2px);
+  opacity: 0;
+}
+
+.knit-pattern-view__reveal-stitch--visible {
+  filter: blur(0);
+  opacity: 1;
+}
+
 .knit-pattern-view__cable {
   align-self: stretch;
   color: var(--knit-cable-color, var(--knit-color-stitch, #070707));
@@ -62,4 +78,142 @@
 
 .knit-stitch-unit__fill {
   fill: currentColor;
+}
+
+.knit-scroll-pattern {
+  --knit-scroll-background: #1b1b1b;
+  --knit-scroll-length: 160vh;
+  --knit-scroll-needle-angle: 13.63deg;
+  --knit-scroll-needle-color: #e2a959;
+  --knit-scroll-needle-highlight: #eecea2;
+  --knit-scroll-needle-left-angle: calc(var(--knit-scroll-needle-angle) * -1);
+  --knit-scroll-needle-left-x: 0px;
+  --knit-scroll-needle-left-y: 0px;
+  --knit-scroll-needle-right-angle: var(--knit-scroll-needle-angle);
+  --knit-scroll-needle-right-x: 0px;
+  --knit-scroll-needle-right-y: 0px;
+  --knit-scroll-needle-thickness: 24px;
+  --knit-scroll-needle-width: min(46vw, 665px);
+  --knit-scroll-progress: 0;
+  --knit-scroll-total-rows: 1;
+  --knit-scroll-visible-rows: 0;
+  --knit-scroll-stitch-size: 48px;
+  --knit-scroll-stitch-overlap: 6px;
+  --knit-scroll-row-gap: 4px;
+  --knit-scroll-row-step: calc(
+    var(--knit-scroll-stitch-size) - var(--knit-scroll-stitch-overlap) +
+      var(--knit-scroll-row-gap)
+  );
+
+  background: var(--knit-scroll-background);
+  min-height: calc(100vh + var(--knit-scroll-length));
+  position: relative;
+}
+
+.knit-scroll-pattern__stage {
+  align-items: flex-start;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: flex-start;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: calc(var(--knit-scroll-needle-thickness) * 4) 24px 48px;
+  position: sticky;
+  top: 0;
+}
+
+.knit-scroll-pattern__fabric {
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+  padding-top: calc(var(--knit-scroll-needle-thickness) * 3.25);
+  transform: translateY(
+    calc(
+      (var(--knit-scroll-visible-rows) - var(--knit-scroll-total-rows)) *
+        var(--knit-scroll-row-step)
+    )
+  );
+  transition: transform 180ms ease;
+  width: 100%;
+}
+
+.knit-scroll-pattern__needles {
+  height: calc(var(--knit-scroll-needle-thickness) * 8);
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 24px;
+  z-index: 3;
+}
+
+.knit-scroll-pattern__needle {
+  background: linear-gradient(
+    90deg,
+    var(--knit-scroll-needle-color),
+    var(--knit-scroll-needle-highlight)
+  );
+  border-radius: 999px;
+  box-shadow:
+    0 2px 0 rgb(255 255 255 / 0.24) inset,
+    0 -4px 8px rgb(73 38 13 / 0.28) inset,
+    0 18px 28px rgb(0 0 0 / 0.28);
+  display: block;
+  height: var(--knit-scroll-needle-thickness);
+  position: absolute;
+  top: calc(var(--knit-scroll-needle-thickness) * 2.25);
+  width: var(--knit-scroll-needle-width);
+}
+
+.knit-scroll-pattern__needle::before {
+  background: var(--knit-scroll-needle-highlight);
+  border-radius: 50%;
+  content: '';
+  height: var(--knit-scroll-needle-thickness);
+  position: absolute;
+  top: 0;
+  width: calc(var(--knit-scroll-needle-thickness) * 3.2);
+}
+
+.knit-scroll-pattern__needle--left {
+  left: 3vw;
+  transform:
+    translate(var(--knit-scroll-needle-left-x), var(--knit-scroll-needle-left-y))
+    rotate(var(--knit-scroll-needle-left-angle));
+  transform-origin: right center;
+}
+
+.knit-scroll-pattern__needle--left::before {
+  right: calc(var(--knit-scroll-needle-thickness) * -1.6);
+}
+
+.knit-scroll-pattern__needle--right {
+  right: 3vw;
+  transform:
+    translate(var(--knit-scroll-needle-right-x), var(--knit-scroll-needle-right-y))
+    rotate(var(--knit-scroll-needle-right-angle));
+  transform-origin: left center;
+}
+
+.knit-scroll-pattern__needle--right::before {
+  left: calc(var(--knit-scroll-needle-thickness) * -1.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knit-pattern-view__reveal-stitch {
+    transition: none;
+  }
+
+  .knit-scroll-pattern__fabric {
+    transition: none;
+  }
+
+  .knit-scroll-pattern__needle--left,
+  .knit-scroll-pattern__needle--right {
+    transform: rotate(var(--knit-scroll-needle-angle));
+  }
+
+  .knit-scroll-pattern__needle--left {
+    transform: rotate(calc(var(--knit-scroll-needle-angle) * -1));
+  }
 }

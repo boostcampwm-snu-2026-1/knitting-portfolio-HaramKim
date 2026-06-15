@@ -23,6 +23,10 @@ export function getKnitCableWidth(cable: KnitCable): number {
   return cable.rightEndStitch - cable.leftStartStitch + 1
 }
 
+export function getKnitCableCount(cable: KnitCable): number {
+  return cable.count ?? 1
+}
+
 export function validateKnitPattern(
   pattern: KnitPattern,
   options: ValidateKnitPatternOptions = {},
@@ -71,9 +75,12 @@ export function validateKnitPattern(
   })
 
   pattern.cables?.forEach((cable) => {
+    const count = getKnitCableCount(cable)
     const hasInvalidSize =
       !Number.isInteger(cable.height) ||
-      cable.height < 2
+      cable.height < 2 ||
+      !Number.isInteger(count) ||
+      count < 1
     const hasInvalidPosition =
       !Number.isInteger(cable.row) ||
       cable.row < 0 ||
@@ -90,7 +97,8 @@ export function validateKnitPattern(
     if (hasInvalidSize) {
       issues.push({
         code: 'invalid-cable-size',
-        message: 'Cable height must be an integer greater than 1.',
+        message:
+          'Cable height must be an integer greater than 1 and count must be a positive integer.',
         row: cable.row,
         stitch: cable.leftStartStitch,
       })
@@ -122,12 +130,13 @@ export function validateKnitPattern(
       })
     }
 
+    const lastCableRow = cable.row + cable.height * count
     const coveredRows = hasInvalidSize || hasInvalidPosition
       ? []
-      : pattern.rows.slice(cable.row, cable.row + cable.height)
+      : pattern.rows.slice(cable.row, lastCableRow)
     const cableFitsRows =
       !hasInvalidPosition &&
-      coveredRows.length === cable.height &&
+      coveredRows.length === cable.height * count &&
       coveredRows.every(
         (row) => cable.rightEndStitch < getKnitRowWidth(row.stitches),
       )

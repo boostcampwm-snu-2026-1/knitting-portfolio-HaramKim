@@ -73,6 +73,17 @@
   color: var(--text-h);
 }
 
+.scroll-demo {
+  display: grid;
+  gap: 20px;
+}
+
+.scroll-demo .knit-scroll-pattern {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: clip;
+}
+
 @media (max-width: 900px) {
   .test-page {
     padding: 28px 20px;

@@ -7,6 +7,7 @@ import type {
   KnitStitch,
 } from '../pattern'
 import {
+  getKnitCableCount,
   getKnitCableWidth,
   getKnitRowWidth,
   getKnitStitchSpan,
@@ -17,6 +18,16 @@ import '../styles/knit-ui.css'
 
 export type KnitPatternDensity = 'compact' | 'regular' | 'loose'
 export type KnitPatternRowAlign = 'center' | 'start'
+export type KnitPatternRevealOrder =
+  | 'left-to-right'
+  | 'right-to-left'
+  | 'alternating'
+
+export interface KnitPatternRevealOptions {
+  direction?: 'top-to-bottom' | 'bottom-to-top'
+  order?: KnitPatternRevealOrder
+  visibleStitchCount: number
+}
 
 export interface KnitPatternViewProps extends HTMLAttributes<HTMLDivElement> {
   pattern: KnitPattern
@@ -26,6 +37,7 @@ export interface KnitPatternViewProps extends HTMLAttributes<HTMLDivElement> {
   gap?: number | string
   rowGap?: number | string
   rowAlign?: KnitPatternRowAlign
+  reveal?: KnitPatternRevealOptions
   allowIncompleteRows?: boolean
 }
 
@@ -37,6 +49,7 @@ export function KnitPatternView({
   gap,
   rowGap,
   rowAlign = 'center',
+  reveal,
   allowIncompleteRows,
   className,
   style,
@@ -61,6 +74,8 @@ export function KnitPatternView({
     ...(rowGap ? { '--knit-pattern-row-gap': toCssSize(rowGap) } : {}),
   } as CSSProperties
   const ariaLabel = props['aria-label']
+  const cables = getExpandedCables(pattern.cables)
+  const hiddenStitchCells = getHiddenStitchCells(cables)
 
   return (
     <div
@@ -75,32 +90,170 @@ export function KnitPatternView({
       <div className="knit-pattern-view__fabric">
         {pattern.rows.flatMap((row, rowIndex) =>
           getPositionedStitches(pattern, row, rowAlign).map(
-            ({ stitch, stitchIndex, column }) => (
-              <KnitStitchUnit
-                className="knit-pattern-view__stitch"
-                color={getPatternStitchColor(pattern, stitch)}
-                key={`${rowIndex}-${stitchIndex}`}
-                kind={stitch.kind}
-                size="var(--knit-pattern-stitch-size)"
-                style={{
-                  gridColumn: `${column} / span ${getKnitStitchSpan(stitch)}`,
-                  gridRow: rowIndex + 1,
-                }}
-              />
-            ),
+            ({ stitch, stitchIndex, column }) =>
+              isStitchHidden(hiddenStitchCells, rowIndex, column, stitch) ? null : (
+                <KnitStitchUnit
+                  className={getRevealClasses(
+                    'knit-pattern-view__stitch',
+                    pattern,
+                    reveal,
+                    rowIndex,
+                    column - 1,
+                  )}
+                  color={getPatternStitchColor(pattern, stitch)}
+                  key={`${rowIndex}-${stitchIndex}`}
+                  kind={stitch.kind}
+                  size="var(--knit-pattern-stitch-size)"
+                  style={{
+                    gridColumn: `${column} / span ${getKnitStitchSpan(stitch)}`,
+                    gridRow: rowIndex + 1,
+                  }}
+                />
+              ),
           ),
         )}
-        {pattern.cables?.map((cable, cableIndex) => (
+        {cables.map((cable, cableIndex) => (
           <KnitCableOverlay
             cable={cable}
             key={`${cable.row}-${cable.leftStartStitch}-${cableIndex}`}
             pattern={pattern}
+            reveal={reveal}
             rowAlign={rowAlign}
           />
         ))}
       </div>
     </div>
   )
+}
+
+function getExpandedCables(cables: KnitCable[] | undefined): KnitCable[] {
+  return (
+    cables?.flatMap((cable) =>
+      Array.from({ length: getKnitCableCount(cable) }, (_, repeatIndex) =>
+        getRepeatedCable(cable, repeatIndex),
+      ),
+    ) ?? []
+  )
+}
+
+function getRepeatedCable(cable: KnitCable, repeatIndex: number): KnitCable {
+  return {
+    color: cable.color,
+    cross: getRepeatedCableCross(cable.cross, repeatIndex),
+    height: cable.height,
+    leftEndStitch: cable.leftEndStitch,
+    leftStartStitch: cable.leftStartStitch,
+    rightEndStitch: cable.rightEndStitch,
+    rightStartStitch: cable.rightStartStitch,
+    row: cable.row + cable.height * repeatIndex,
+  }
+}
+
+function getRepeatedCableCross(
+  cross: KnitCable['cross'],
+  repeatIndex: number,
+): KnitCable['cross'] {
+  if (repeatIndex % 2 === 0) {
+    return cross
+  }
+
+  return cross === 'left-over-right' ? 'right-over-left' : 'left-over-right'
+}
+
+function getHiddenStitchCells(cables: KnitCable[]): Set<string> {
+  const cells = new Set<string>()
+
+  cables.forEach((cable) => {
+    for (let row = cable.row; row < cable.row + cable.height; row += 1) {
+      for (
+        let column = cable.leftStartStitch;
+        column <= cable.rightEndStitch;
+        column += 1
+      ) {
+        cells.add(getStitchCellKey(row, column))
+      }
+    }
+  })
+
+  return cells
+}
+
+function isStitchHidden(
+  cells: Set<string>,
+  rowIndex: number,
+  column: number,
+  stitch: KnitStitch,
+): boolean {
+  const span = getKnitStitchSpan(stitch)
+
+  return Array.from({ length: span }, (_, spanIndex) =>
+    cells.has(getStitchCellKey(rowIndex, column + spanIndex - 1)),
+  ).some(Boolean)
+}
+
+function getStitchCellKey(row: number, column: number): string {
+  return `${row}:${column}`
+}
+
+function getRevealClasses(
+  className: string,
+  pattern: KnitPattern,
+  reveal: KnitPatternRevealOptions | undefined,
+  rowIndex: number,
+  columnIndex: number,
+): string {
+  if (!reveal) {
+    return className
+  }
+
+  const revealIndex = getRevealIndex(
+    pattern,
+    rowIndex,
+    columnIndex,
+    reveal.direction ?? 'top-to-bottom',
+    reveal.order ?? 'left-to-right',
+  )
+  const revealClass =
+    revealIndex < reveal.visibleStitchCount
+      ? 'knit-pattern-view__reveal-stitch--visible'
+      : 'knit-pattern-view__reveal-stitch--hidden'
+
+  return `${className} knit-pattern-view__reveal-stitch ${revealClass}`
+}
+
+function getRevealIndex(
+  pattern: KnitPattern,
+  rowIndex: number,
+  columnIndex: number,
+  direction: KnitPatternRevealOptions['direction'],
+  order: KnitPatternRevealOrder,
+): number {
+  const revealRowIndex =
+    direction === 'bottom-to-top'
+      ? pattern.rows.length - rowIndex - 1
+      : rowIndex
+
+  return (
+    revealRowIndex * pattern.castOn +
+    getRevealColumnIndex(pattern, revealRowIndex, columnIndex, order)
+  )
+}
+
+function getRevealColumnIndex(
+  pattern: KnitPattern,
+  revealRowIndex: number,
+  columnIndex: number,
+  order: KnitPatternRevealOrder,
+): number {
+  if (order === 'right-to-left') {
+    return pattern.castOn - columnIndex - 1
+  }
+
+  if (order === 'alternating' && revealRowIndex % 2 === 1) {
+    return pattern.castOn - columnIndex - 1
+  }
+
+  return columnIndex
 }
 
 function toCssSize(value: number | string): string {
@@ -151,12 +304,14 @@ function getRowStartColumn(
 interface KnitCableOverlayProps {
   cable: KnitCable
   pattern: KnitPattern
+  reveal?: KnitPatternRevealOptions
   rowAlign: KnitPatternRowAlign
 }
 
 function KnitCableOverlay({
   cable,
   pattern,
+  reveal,
   rowAlign,
 }: KnitCableOverlayProps) {
   const row = pattern.rows[cable.row]
@@ -178,10 +333,16 @@ function KnitCableOverlay({
     >
       {segments.map((segment) => (
         <KnitStitchUnit
-          className={[
-            'knit-pattern-view__cable-stitch',
-            `knit-pattern-view__cable-stitch--${segment.strand}`,
-          ].join(' ')}
+          className={getRevealClasses(
+            [
+              'knit-pattern-view__cable-stitch',
+              `knit-pattern-view__cable-stitch--${segment.strand}`,
+            ].join(' '),
+            pattern,
+            reveal,
+            cable.row + segment.rowIndex,
+            cable.leftStartStitch + segment.columnIndex,
+          )}
           color={getCableSegmentColor(pattern, cable, segment)}
           key={`${segment.strand}-${segment.laneIndex}-${segment.rowIndex}`}
           kind="knit"

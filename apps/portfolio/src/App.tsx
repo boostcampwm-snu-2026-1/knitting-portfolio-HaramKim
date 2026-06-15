@@ -115,6 +115,7 @@ function App() {
         <div className="unit-row" aria-label="stitch unit samples">
           <KnitStitchUnit aria-label="knit stitch" kind="knit" size={72} />
           <KnitStitchUnit aria-label="purl stitch" kind="purl" size={72} />
+          <KnitStitchUnit aria-label="mistake stitch" kind="mistake" size={72} />
         </div>
       </section>
 
@@ -126,6 +127,7 @@ function App() {
           </div>
           <KnitPatternView
             aria-label="basic knit and purl pattern"
+            mistakeFrequency={0.18}
             pattern={stockinettePattern}
             stitchSize={40}
           />
@@ -168,6 +170,7 @@ function App() {
           aria-label="scroll knitted cable pattern"
           gap={2}
           needle={{ visible: true }}
+          mistakeFrequency={0.08}
           pattern={cablePattern}
           rowGap={1}
           scrollLength="180vh"

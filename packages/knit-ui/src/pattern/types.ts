@@ -1,4 +1,4 @@
-export type StitchKind = 'knit' | 'purl'
+export type StitchKind = 'knit' | 'purl' | 'mistake'
 
 export type CableCross = 'left-over-right' | 'right-over-left'
 

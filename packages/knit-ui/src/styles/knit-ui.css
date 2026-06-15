@@ -80,6 +80,12 @@
   fill: currentColor;
 }
 
+.knit-stitch-unit__mistake-thread {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 30px;
+}
+
 .knit-scroll-pattern {
   --knit-scroll-background: #1b1b1b;
   --knit-scroll-length: 160vh;

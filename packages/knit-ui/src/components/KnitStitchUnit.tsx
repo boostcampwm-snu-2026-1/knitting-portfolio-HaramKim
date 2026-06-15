@@ -26,6 +26,7 @@ export function KnitStitchUnit({
     '--knit-stitch-size': typeof size === 'number' ? `${size}px` : size,
   } as CSSProperties
   const ariaLabel = props['aria-label']
+  const viewBox = kind === 'mistake' ? '0 0 75 81' : '0 0 120 96'
 
   return (
     <svg
@@ -34,12 +35,13 @@ export function KnitStitchUnit({
       focusable="false"
       role={ariaLabel ? 'img' : undefined}
       style={stitchStyle}
-      viewBox="0 0 120 96"
+      viewBox={viewBox}
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
       {kind === 'knit' ? <KnitShape /> : null}
       {kind === 'purl' ? <PurlShape /> : null}
+      {kind === 'mistake' ? <MistakeShape /> : null}
     </svg>
   )
 }
@@ -64,6 +66,15 @@ function PurlShape() {
     <path
       className="knit-stitch-unit__fill"
       d="M8 34C28 26 45 22 60 22C75 22 92 26 112 34L101 68C84 62 70 59 60 59C50 59 36 62 19 68L8 34Z"
+    />
+  )
+}
+
+function MistakeShape() {
+  return (
+    <path
+      className="knit-stitch-unit__mistake-thread"
+      d="M31.5085 70C11.9446 50.4444 5.09774 15 37.3779 15C69.658 15 63.7885 49.8333 42.2686 70"
     />
   )
 }

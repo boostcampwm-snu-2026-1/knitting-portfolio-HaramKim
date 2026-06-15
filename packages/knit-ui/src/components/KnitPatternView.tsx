@@ -5,6 +5,7 @@ import type {
   KnitPattern,
   KnitRow,
   KnitStitch,
+  StitchKind,
 } from '../pattern'
 import {
   getKnitCableCount,
@@ -39,6 +40,7 @@ export interface KnitPatternViewProps extends HTMLAttributes<HTMLDivElement> {
   rowAlign?: KnitPatternRowAlign
   reveal?: KnitPatternRevealOptions
   allowIncompleteRows?: boolean
+  mistakeFrequency?: number
 }
 
 export function KnitPatternView({
@@ -51,6 +53,7 @@ export function KnitPatternView({
   rowAlign = 'center',
   reveal,
   allowIncompleteRows,
+  mistakeFrequency = 0,
   className,
   style,
   ...props
@@ -76,6 +79,7 @@ export function KnitPatternView({
   const ariaLabel = props['aria-label']
   const cables = getExpandedCables(pattern.cables)
   const hiddenStitchCells = getHiddenStitchCells(cables)
+  const normalizedMistakeFrequency = normalizeMistakeFrequency(mistakeFrequency)
 
   return (
     <div
@@ -102,7 +106,12 @@ export function KnitPatternView({
                   )}
                   color={getPatternStitchColor(pattern, stitch)}
                   key={`${rowIndex}-${stitchIndex}`}
-                  kind={stitch.kind}
+                  kind={getRenderedStitchKind(
+                    stitch,
+                    normalizedMistakeFrequency,
+                    rowIndex,
+                    column - 1,
+                  )}
                   size="var(--knit-pattern-stitch-size)"
                   style={{
                     gridColumn: `${column} / span ${getKnitStitchSpan(stitch)}`,
@@ -265,6 +274,39 @@ function getPatternStitchColor(
   stitch: KnitStitch,
 ): string | undefined {
   return stitch.color ?? pattern.palette?.colors[0]
+}
+
+function getRenderedStitchKind(
+  stitch: KnitStitch,
+  mistakeFrequency: number,
+  rowIndex: number,
+  columnIndex: number,
+): StitchKind {
+  if (stitch.kind === 'mistake' || mistakeFrequency <= 0) {
+    return stitch.kind
+  }
+
+  return getStitchRandomValue(rowIndex, columnIndex) < mistakeFrequency
+    ? 'mistake'
+    : stitch.kind
+}
+
+function normalizeMistakeFrequency(frequency: number): number {
+  if (!Number.isFinite(frequency)) {
+    return 0
+  }
+
+  return clampNumber(frequency, 0, 1)
+}
+
+function getStitchRandomValue(rowIndex: number, columnIndex: number): number {
+  let hash =
+    Math.imul(rowIndex + 1, 374761393) ^
+    Math.imul(columnIndex + 1, 668265263)
+
+  hash = Math.imul(hash ^ (hash >>> 13), 1274126177)
+
+  return ((hash ^ (hash >>> 16)) >>> 0) / 4294967296
 }
 
 function getPositionedStitches(

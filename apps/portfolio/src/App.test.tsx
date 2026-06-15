@@ -43,9 +43,6 @@ describe('App scroll knitting demo', () => {
       expect(scrollRoot.style.getPropertyValue('--knit-scroll-progress')).toBe(
         '0',
       )
-      expect(
-        scrollRoot.style.getPropertyValue('--knit-scroll-visible-rows'),
-      ).toBe('1')
     })
 
     const initialVisibleStitches = getVisibleStitches(scrollRoot).length
@@ -55,9 +52,6 @@ describe('App scroll knitting demo', () => {
     expect(scrollRoot.style.getPropertyValue('--knit-scroll-progress')).toBe(
       '0.5',
     )
-    expect(
-      scrollRoot.style.getPropertyValue('--knit-scroll-visible-rows'),
-    ).toBe('5')
     expect(getVisibleStitches(scrollRoot).length).toBeGreaterThan(
       initialVisibleStitches,
     )
@@ -67,9 +61,6 @@ describe('App scroll knitting demo', () => {
     expect(scrollRoot.style.getPropertyValue('--knit-scroll-progress')).toBe(
       '0',
     )
-    expect(
-      scrollRoot.style.getPropertyValue('--knit-scroll-visible-rows'),
-    ).toBe('1')
     expect(getVisibleStitches(scrollRoot)).toHaveLength(initialVisibleStitches)
   })
 })

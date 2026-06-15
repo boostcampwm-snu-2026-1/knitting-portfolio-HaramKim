@@ -18,6 +18,7 @@ export type {
   KnitPatternRowAlign,
   KnitStitchActivationEvent,
   KnitStitchClickDetails,
+  KnitStitchPositionTarget,
 } from './components/KnitPattern'
 export type {
   KnitPatternGroupDirection,

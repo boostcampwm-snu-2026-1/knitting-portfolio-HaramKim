@@ -1,10 +1,15 @@
+import { useState } from 'react'
 import {
   KnitPattern,
   KnitPatternGroup,
   KnitScrollPattern,
   KnitStitchUnit,
 } from '@knit-ui/core'
-import type { KnitPatternData, StitchKind } from '@knit-ui/core'
+import type {
+  KnitPatternData,
+  KnitStitchPositionTarget,
+  StitchKind,
+} from '@knit-ui/core'
 import './App.css'
 
 const stockinettePattern: KnitPatternData = {
@@ -76,6 +81,28 @@ const colorworkPattern: KnitPatternData = {
   ],
 }
 
+const clickablePattern: KnitPatternData = {
+  castOn: 5,
+  palette: {
+    colors: ['#070707', '#AA3BFF'],
+  },
+  rows: [
+    {
+      stitches: makeColorRow('knit', ['#070707', '#070707', '#070707', '#070707', '#070707']),
+    },
+    {
+      stitches: makeColorRow('knit', ['#070707', '#070707', '#AA3BFF', '#070707', '#070707']),
+    },
+    {
+      stitches: makeColorRow('knit', ['#070707', '#070707', '#070707', '#070707', '#070707']),
+    },
+  ],
+}
+
+const clickableStitchPositions: KnitStitchPositionTarget[] = [
+  { rowIndex: 1, columnIndex: 2 },
+]
+
 function makeRowKinds(kind: StitchKind, count: number) {
   return Array.from({ length: count }, () => kind)
 }
@@ -110,6 +137,8 @@ function repeatRow(row: StitchKind[], count: number): StitchKind[] {
 }
 
 function App() {
+  const [isClickModalOpen, setIsClickModalOpen] = useState(false)
+
   return (
     <main className="test-page">
       <section className="test-hero">
@@ -164,6 +193,20 @@ function App() {
             stitchSize={34}
           />
         </article>
+
+        <article className="sample">
+          <div className="sample-copy">
+            <h2>Click event</h2>
+            <p>`onStitchClick` opens a modal from a selected stitch.</p>
+          </div>
+          <KnitPattern
+            aria-label="clickable knit pattern"
+            interactiveStitchPositions={clickableStitchPositions}
+            onStitchClick={() => setIsClickModalOpen(true)}
+            pattern={clickablePattern}
+            stitchSize={44}
+          />
+        </article>
       </section>
 
       <section className="scroll-demo">
@@ -192,7 +235,37 @@ function App() {
           </KnitPatternGroup>
         </KnitScrollPattern>
       </section>
+
+      {isClickModalOpen ? (
+        <ClickResultModal onClose={() => setIsClickModalOpen(false)} />
+      ) : null}
     </main>
+  )
+}
+
+interface ClickResultModalProps {
+  onClose: () => void
+}
+
+function ClickResultModal({ onClose }: ClickResultModalProps) {
+  return (
+    <div className="click-modal-backdrop">
+      <section
+        aria-labelledby="click-modal-title"
+        aria-modal="true"
+        className="click-modal"
+        role="dialog"
+      >
+        <h2 id="click-modal-title">클릭 가능</h2>
+        <button
+          className="click-modal__button"
+          onClick={onClose}
+          type="button"
+        >
+          닫기
+        </button>
+      </section>
+    </div>
   )
 }
 

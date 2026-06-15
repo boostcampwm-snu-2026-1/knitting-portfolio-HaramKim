@@ -52,6 +52,11 @@ export interface KnitStitchClickDetails {
   event: KnitStitchActivationEvent
 }
 
+export interface KnitStitchPositionTarget {
+  rowIndex: number
+  columnIndex: number
+}
+
 export interface KnitPatternProps extends HTMLAttributes<HTMLDivElement> {
   pattern: KnitPatternData
   density?: KnitPatternDensity
@@ -63,6 +68,7 @@ export interface KnitPatternProps extends HTMLAttributes<HTMLDivElement> {
   reveal?: KnitPatternRevealOptions
   allowIncompleteRows?: boolean
   mistakeFrequency?: number
+  interactiveStitchPositions?: KnitStitchPositionTarget[]
   onStitchClick?: (details: KnitStitchClickDetails) => void
 }
 
@@ -77,6 +83,7 @@ export function KnitPattern({
   reveal,
   allowIncompleteRows,
   mistakeFrequency = 0,
+  interactiveStitchPositions,
   onStitchClick,
   className,
   style,
@@ -107,8 +114,15 @@ export function KnitPattern({
   const cables = getExpandedCables(pattern.cables)
   const hiddenStitchCells = getHiddenStitchCells(cables)
   const normalizedMistakeFrequency = normalizeMistakeFrequency(mistakeFrequency)
+  const interactiveStitchCells = getInteractiveStitchCells(
+    interactiveStitchPositions,
+  )
   const hasInteractiveMistakes = normalizedMistakeFrequency > 0
-  const hasInteractiveStitches = hasInteractiveMistakes || !!onStitchClick
+  const hasClickableStitches = hasClickableStitchTargets(
+    onStitchClick,
+    interactiveStitchCells,
+  )
+  const hasInteractiveStitches = hasInteractiveMistakes || hasClickableStitches
 
   function resolveMistake(cellKey: string) {
     setResolvedMistakeCells((currentCells) => {
@@ -149,7 +163,16 @@ export function KnitPattern({
                   columnIndex,
                 )
               const renderedKind = isResolvableMistake ? 'mistake' : stitch.kind
-              const isInteractive = isResolvableMistake || !!onStitchClick
+              const isClickableStitch = isClickableStitchTarget(
+                onStitchClick,
+                interactiveStitchCells,
+                rowIndex,
+                columnIndex,
+              )
+              const stitchClickHandler = isClickableStitch
+                ? onStitchClick
+                : undefined
+              const isInteractive = isResolvableMistake || isClickableStitch
               const stitchClassName = getRevealClasses(
                 [
                   'knit-pattern-view__stitch',
@@ -200,7 +223,7 @@ export function KnitPattern({
                               stitch,
                               stitchIndex,
                             },
-                            onStitchClick,
+                            stitchClickHandler,
                             isResolvableMistake ? resolveMistake : undefined,
                             cellKey,
                           )
@@ -219,7 +242,7 @@ export function KnitPattern({
                               stitch,
                               stitchIndex,
                             },
-                            onStitchClick,
+                            stitchClickHandler,
                             isResolvableMistake ? resolveMistake : undefined,
                             cellKey,
                           )
@@ -243,6 +266,7 @@ export function KnitPattern({
             key={`${cable.row}-${cable.leftStartStitch}-${cableIndex}`}
             mistakeFrequency={normalizedMistakeFrequency}
             pattern={pattern}
+            interactiveStitchCells={interactiveStitchCells}
             onStitchClick={onStitchClick}
             reveal={reveal}
             resolveMistake={resolveMistake}
@@ -322,6 +346,44 @@ function isStitchHidden(
 
 function getStitchCellKey(row: number, column: number): string {
   return `${row}:${column}`
+}
+
+function getInteractiveStitchCells(
+  positions: KnitStitchPositionTarget[] | undefined,
+): Set<string> | undefined {
+  return positions
+    ? new Set(
+        positions.map((position) =>
+          getStitchCellKey(position.rowIndex, position.columnIndex),
+        ),
+      )
+    : undefined
+}
+
+function hasClickableStitchTargets(
+  onStitchClick: ((details: KnitStitchClickDetails) => void) | undefined,
+  interactiveStitchCells: Set<string> | undefined,
+): boolean {
+  return (
+    !!onStitchClick &&
+    (!interactiveStitchCells || interactiveStitchCells.size > 0)
+  )
+}
+
+function isClickableStitchTarget(
+  onStitchClick: ((details: KnitStitchClickDetails) => void) | undefined,
+  interactiveStitchCells: Set<string> | undefined,
+  rowIndex: number,
+  columnIndex: number,
+): boolean {
+  if (!onStitchClick) {
+    return false
+  }
+
+  return (
+    !interactiveStitchCells ||
+    interactiveStitchCells.has(getStitchCellKey(rowIndex, columnIndex))
+  )
 }
 
 function getRevealClasses(
@@ -451,8 +513,13 @@ function activateStitch(
   resolveMistake: ((cellKey: string) => void) | undefined,
   cellKey: string,
 ) {
+  if (resolveMistake) {
+    resolveMistake(cellKey)
+
+    return
+  }
+
   onStitchClick?.({ ...details, event })
-  resolveMistake?.(cellKey)
 }
 
 function normalizeMistakeFrequency(frequency: number): number {
@@ -509,6 +576,7 @@ function getRowStartColumn(
 
 interface KnitCableOverlayProps {
   cable: KnitCable
+  interactiveStitchCells: Set<string> | undefined
   mistakeFrequency: number
   onStitchClick?: (details: KnitStitchClickDetails) => void
   pattern: KnitPatternData
@@ -520,6 +588,7 @@ interface KnitCableOverlayProps {
 
 function KnitCableOverlay({
   cable,
+  interactiveStitchCells,
   mistakeFrequency,
   onStitchClick,
   pattern,
@@ -533,6 +602,10 @@ function KnitCableOverlay({
   const column = rowStart + cable.leftStartStitch
   const cableWidth = getKnitCableWidth(cable)
   const segments = getCableStitchSegments(cable)
+  const hasClickableStitches = hasClickableStitchTargets(
+    onStitchClick,
+    interactiveStitchCells,
+  )
   const style = {
     '--knit-cable-height': cable.height,
     gridColumn: `${column} / span ${cableWidth}`,
@@ -541,7 +614,9 @@ function KnitCableOverlay({
 
   return (
     <div
-      aria-hidden={mistakeFrequency > 0 || onStitchClick ? undefined : true}
+      aria-hidden={
+        mistakeFrequency > 0 || hasClickableStitches ? undefined : true
+      }
       className={`knit-pattern-view__cable knit-pattern-view__cable--${cable.cross}`}
       style={style}
     >
@@ -569,7 +644,16 @@ function KnitCableOverlay({
             sourceColumnIndex,
           )
         const renderedKind = isResolvableMistake ? 'mistake' : baseKind
-        const isInteractive = isResolvableMistake || !!onStitchClick
+        const isClickableStitch = isClickableStitchTarget(
+          onStitchClick,
+          interactiveStitchCells,
+          rowIndex,
+          sourceColumnIndex,
+        )
+        const stitchClickHandler = isClickableStitch
+          ? onStitchClick
+          : undefined
+        const isInteractive = isResolvableMistake || isClickableStitch
         const stitchClassName = getRevealClasses(
           [
             'knit-pattern-view__cable-stitch',
@@ -616,7 +700,7 @@ function KnitCableOverlay({
                         stitch: sourceStitch,
                         stitchIndex,
                       },
-                      onStitchClick,
+                      stitchClickHandler,
                       isResolvableMistake ? resolveMistake : undefined,
                       cellKey,
                     )
@@ -635,7 +719,7 @@ function KnitCableOverlay({
                         stitch: sourceStitch,
                         stitchIndex,
                       },
-                      onStitchClick,
+                      stitchClickHandler,
                       isResolvableMistake ? resolveMistake : undefined,
                       cellKey,
                     )

@@ -28,6 +28,7 @@ export interface KnitScrollNeedleOptions {
   highlightColor?: string
   thickness?: number | string
   angle?: number
+  speed?: number
 }
 
 export interface KnitScrollPatternProps extends HTMLAttributes<HTMLDivElement> {
@@ -46,7 +47,11 @@ export function KnitScrollPattern({
   ...props
 }: KnitScrollPatternProps) {
   const rootRef = useRef<HTMLDivElement>(null)
-  const progress = useKnitScrollProgress(rootRef)
+  const needleMotionSpeed = normalizeNeedleMotionSpeed(needle?.speed)
+  const { progress, needleMotionProgress } = useKnitScrollState(
+    rootRef,
+    needleMotionSpeed,
+  )
   const totalStitchCount = getScrollableStitchCount(children)
   const visibleStitchCount = Math.ceil(totalStitchCount * progress)
   const hiddenFabricOffset = getHiddenFabricOffset(children, visibleStitchCount)
@@ -55,9 +60,8 @@ export function KnitScrollPattern({
     visibleStitchCount,
     stitchOrder,
   )
-  const stitchMotionProgress = getLoopProgress(progress * 8)
-  const needlePierceProgress = Math.sin(stitchMotionProgress * Math.PI)
-  const needleLiftProgress = Math.sin(stitchMotionProgress * Math.PI * 2)
+  const needlePierceProgress = Math.sin(needleMotionProgress * Math.PI)
+  const needleLiftProgress = Math.sin(needleMotionProgress * Math.PI * 2)
   const needleAngle = needle?.angle ?? 13.63
   const classes = ['knit-scroll-pattern', className].filter(Boolean).join(' ')
   const scrollStyle = {
@@ -98,8 +102,23 @@ function KnitScrollNeedles() {
   )
 }
 
-function useKnitScrollProgress(rootRef: RefObject<HTMLDivElement | null>) {
-  const [progress, setProgress] = useState(0)
+interface KnitScrollState {
+  progress: number
+  needleMotionProgress: number
+}
+
+const NEEDLE_SCROLL_PIXELS_PER_LOOP = 420
+
+function useKnitScrollState(
+  rootRef: RefObject<HTMLDivElement | null>,
+  needleMotionSpeed: number,
+) {
+  const [scrollState, setScrollState] = useState<KnitScrollState>({
+    needleMotionProgress: 0,
+    progress: 0,
+  })
+  const previousScrollTopRef = useRef<number | undefined>(undefined)
+  const needleMotionOffsetRef = useRef(0)
 
   useEffect(() => {
     const prefersReducedMotion = window.matchMedia(
@@ -108,7 +127,12 @@ function useKnitScrollProgress(rootRef: RefObject<HTMLDivElement | null>) {
     let frame = 0
 
     if (prefersReducedMotion.matches) {
-      frame = window.requestAnimationFrame(() => setProgress(1))
+      frame = window.requestAnimationFrame(() =>
+        setScrollState({
+          needleMotionProgress: 0,
+          progress: 1,
+        }),
+      )
 
       return () => window.cancelAnimationFrame(frame)
     }
@@ -122,9 +146,21 @@ function useKnitScrollProgress(rootRef: RefObject<HTMLDivElement | null>) {
 
       const rect = root.getBoundingClientRect()
       const scrollDistance = Math.max(1, root.offsetHeight - window.innerHeight)
-      const nextProgress = clampNumber(-rect.top / scrollDistance, 0, 1)
+      const scrollTop = clampNumber(-rect.top, 0, scrollDistance)
+      const previousScrollTop = previousScrollTopRef.current
 
-      setProgress(nextProgress)
+      if (previousScrollTop !== undefined) {
+        needleMotionOffsetRef.current +=
+          ((scrollTop - previousScrollTop) * needleMotionSpeed) /
+          NEEDLE_SCROLL_PIXELS_PER_LOOP
+      }
+
+      previousScrollTopRef.current = scrollTop
+
+      setScrollState({
+        needleMotionProgress: getLoopProgress(needleMotionOffsetRef.current),
+        progress: scrollTop / scrollDistance,
+      })
     }
     const requestUpdate = () => {
       window.cancelAnimationFrame(frame)
@@ -140,9 +176,9 @@ function useKnitScrollProgress(rootRef: RefObject<HTMLDivElement | null>) {
       window.removeEventListener('resize', requestUpdate)
       window.removeEventListener('scroll', requestUpdate)
     }
-  }, [rootRef])
+  }, [needleMotionSpeed, rootRef])
 
-  return progress
+  return scrollState
 }
 
 function toCssSize(value: number | string): string {
@@ -338,6 +374,14 @@ function getDensityGap(density: KnitPatternProps['density']): number {
   }
 
   return 4
+}
+
+function normalizeNeedleMotionSpeed(speed: number | undefined): number {
+  if (speed === undefined || !Number.isFinite(speed)) {
+    return 1
+  }
+
+  return Math.max(0, speed)
 }
 
 function revealScrollPatterns(

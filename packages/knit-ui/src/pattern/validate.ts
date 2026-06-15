@@ -1,7 +1,7 @@
 import type {
   KnitCable,
   KnitCableColor,
-  KnitPattern,
+  KnitPatternData,
   KnitPatternValidationIssue,
   KnitPatternValidationResult,
   KnitStitch,
@@ -28,7 +28,7 @@ export function getKnitCableCount(cable: KnitCable): number {
 }
 
 export function validateKnitPattern(
-  pattern: KnitPattern,
+  pattern: KnitPatternData,
   options: ValidateKnitPatternOptions = {},
 ): KnitPatternValidationResult {
   const issues: KnitPatternValidationIssue[] = []

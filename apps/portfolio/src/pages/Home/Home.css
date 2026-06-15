@@ -1,0 +1,30 @@
+.home-page {
+  min-height: 100svh;
+  background: #151414;
+}
+
+.home-knit-scroll {
+  --knit-scroll-background: #151414;
+  --knit-scroll-needle-color: #d69a45;
+  --knit-scroll-needle-highlight: #f2c986;
+}
+
+.home-knit-scroll .knit-scroll-pattern__stage {
+  align-items: center;
+  justify-content: center;
+  padding: 96px 24px 72px;
+}
+
+.home-knit-scroll .knit-scroll-pattern__fabric {
+  align-items: center;
+}
+
+.home-knit-scroll .knit-pattern-view {
+  filter: drop-shadow(0 18px 30px rgb(0 0 0 / 0.18));
+}
+
+@media (max-width: 700px) {
+  .home-knit-scroll .knit-scroll-pattern__stage {
+    padding-inline: 12px;
+  }
+}

@@ -57,7 +57,7 @@
   color: var(--knit-cable-color, var(--knit-color-stitch, #070707));
   justify-self: stretch;
   overflow: visible;
-  pointer-events: none;
+  pointer-events: auto;
   position: relative;
   z-index: 1;
 }
@@ -68,6 +68,7 @@
 }
 
 .knit-stitch-unit {
+  --knit-stitch-hover-scale: 1;
   --knit-stitch-stroke-width: 40px;
 
   display: inline-block;
@@ -75,7 +76,15 @@
   height: var(--knit-stitch-size, 48px);
   overflow: visible;
   color: var(--knit-stitch-color, var(--knit-color-stitch, #070707));
+  transform: scale(var(--knit-stitch-hover-scale));
+  transition: transform 160ms ease;
+  transform-origin: center;
   vertical-align: middle;
+}
+
+.knit-stitch-unit:hover,
+.knit-stitch-unit:focus-visible {
+  --knit-stitch-hover-scale: 1.2;
 }
 
 .knit-stitch-unit__thread {
@@ -205,6 +214,10 @@
 
 @media (prefers-reduced-motion: reduce) {
   .knit-pattern-view__reveal-stitch {
+    transition: none;
+  }
+
+  .knit-stitch-unit {
     transition: none;
   }
 

@@ -392,7 +392,7 @@ function KnitCableOverlay({
           style={{
             left: `${segment.left}%`,
             top: `${segment.top}%`,
-            transform: `translate(-50%, -50%) rotate(${segment.rotate}deg) scaleY(${segment.scaleY})`,
+            transform: `translate(-50%, -50%) rotate(${segment.rotate}deg) scaleY(${segment.scaleY}) scale(var(--knit-stitch-hover-scale))`,
             zIndex: segment.zIndex,
           }}
         />

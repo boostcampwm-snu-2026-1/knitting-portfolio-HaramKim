@@ -1,11 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { KnitPattern, KnitScrollPattern } from '@knit-ui/core'
-import type { KnitPatternData, StitchKind } from '@knit-ui/core'
+import type {
+  KnitPatternData,
+  KnitStitchClickDetails,
+  KnitStitchPositionTarget,
+  StitchKind,
+} from '@knit-ui/core'
 import './Home.css'
 
 const HOME_PATTERN_COLUMN_COUNT = 28
 const HOME_PATTERN_ROW_COUNT = 30
+const HOME_LEFT_CABLE_ROW = 1
+const HOME_LEFT_CABLE_HEIGHT = 4
+const HOME_LEFT_CABLE_COUNT = 7
+const HOME_LEFT_CABLE_START = 2
+const HOME_LEFT_CABLE_END = 7
 
 const homePalette = {
   canvas: '#FBF4F0',
@@ -29,13 +39,13 @@ const homePattern: KnitPatternData = {
   })),
   cables: [
     {
-      row: 1,
-      height: 4,
-      leftStartStitch: 2,
+      row: HOME_LEFT_CABLE_ROW,
+      height: HOME_LEFT_CABLE_HEIGHT,
+      leftStartStitch: HOME_LEFT_CABLE_START,
       leftEndStitch: 4,
       rightStartStitch: 5,
-      rightEndStitch: 7,
-      count: 7,
+      rightEndStitch: HOME_LEFT_CABLE_END,
+      count: HOME_LEFT_CABLE_COUNT,
       cross: 'left-over-right',
       color: [
         homePalette.primary600,
@@ -83,6 +93,24 @@ const homePattern: KnitPatternData = {
       ],
     },
   ],
+}
+
+const homeLeftCableInteractivePositions = getCableInteractivePositions(
+  HOME_LEFT_CABLE_ROW,
+  HOME_LEFT_CABLE_HEIGHT,
+  HOME_LEFT_CABLE_COUNT,
+  HOME_LEFT_CABLE_START,
+  HOME_LEFT_CABLE_END,
+)
+
+const homeLeftCableInteractiveCells = new Set(
+  homeLeftCableInteractivePositions.map(({ columnIndex, rowIndex }) =>
+    getStitchCellKey(rowIndex, columnIndex),
+  ),
+)
+
+interface HomeProps {
+  onNavigateToTest?: () => void
 }
 
 function makeHomePatternRow(rowIndex: number) {
@@ -168,7 +196,40 @@ function clampNumber(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
 
-function Home() {
+function getCableInteractivePositions(
+  row: number,
+  height: number,
+  count: number,
+  startColumn: number,
+  endColumn: number,
+): KnitStitchPositionTarget[] {
+  return Array.from({ length: count }, (_, repeatIndex) =>
+    Array.from({ length: height }, (_, rowOffset) =>
+      Array.from(
+        { length: endColumn - startColumn + 1 },
+        (_, columnOffset) => ({
+          columnIndex: startColumn + columnOffset,
+          rowIndex: row + repeatIndex * height + rowOffset,
+        }),
+      ),
+    ),
+  ).flat(2)
+}
+
+function getStitchCellKey(rowIndex: number, columnIndex: number): string {
+  return `${rowIndex}:${columnIndex}`
+}
+
+function isHomeLeftCableClick(details: KnitStitchClickDetails): boolean {
+  return (
+    details.source === 'cable' &&
+    homeLeftCableInteractiveCells.has(
+      getStitchCellKey(details.rowIndex, details.columnIndex),
+    )
+  )
+}
+
+function Home({ onNavigateToTest }: HomeProps) {
   const introRef = useRef<HTMLElement>(null)
   const [introProgress, setIntroProgress] = useState(0)
   const titleOpacity = clampNumber(1 - introProgress * 1.45, 0, 1)
@@ -212,6 +273,12 @@ function Home() {
     }
   }, [])
 
+  function handleHomeStitchClick(details: KnitStitchClickDetails) {
+    if (isHomeLeftCableClick(details)) {
+      onNavigateToTest?.()
+    }
+  }
+
   return (
     <main className="home-page" style={homeStyle}>
       <section className="home-intro" ref={introRef}>
@@ -239,7 +306,10 @@ function Home() {
           <KnitPattern
             aria-label="28 by 30 knit purl cable repeat pattern"
             density="compact"
+            mistakeFrequency={0.02}
             gap={2}
+            interactiveStitchPositions={homeLeftCableInteractivePositions}
+            onStitchClick={handleHomeStitchClick}
             pattern={homePattern}
             rowGap={1}
             stitchSize={44}

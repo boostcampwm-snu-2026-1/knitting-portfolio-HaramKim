@@ -11,15 +11,14 @@ afterEach(() => {
 })
 
 describe('App', () => {
-  it('renders the Home knit scroll pattern', () => {
+  it('renders the Knit UI System intro', () => {
     render(<App />)
 
-    const scrollPattern = screen.getByLabelText('home knit scroll pattern')
-    const knitPattern = screen.getByRole('img', {
-      name: '20 by 50 knit purl repeat pattern',
-    })
-
-    expect(scrollPattern).toHaveClass('knit-scroll-pattern')
-    expect(knitPattern).toHaveAttribute('data-row-count', '50')
+    expect(screen.getByRole('heading', {
+      name: 'Knit UI System',
+    })).toBeInTheDocument()
+    expect(screen.getByRole('img', {
+      name: 'purl stitch unit',
+    })).toBeInTheDocument()
   })
 })

@@ -4,6 +4,7 @@ import {
   fireEvent,
   render,
   screen,
+  within,
   waitFor,
 } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -15,22 +16,55 @@ afterEach(() => {
 })
 
 describe('Test scroll knitting demo', () => {
-  it('opens the click result modal when the clickable stitch is selected', () => {
+  it('introduces the basic stitch units', () => {
+    render(<Test />)
+
+    expect(screen.getByRole('heading', {
+      name: 'Knit UI System',
+    })).toBeInTheDocument()
+    expect(screen.getByRole('heading', {
+      name: '기본 단위',
+    })).toBeInTheDocument()
+    expect(screen.getByRole('img', {
+      name: 'purl stitch unit',
+    })).toBeInTheDocument()
+    expect(screen.getByRole('img', {
+      name: 'knit stitch unit',
+    })).toBeInTheDocument()
+    expect(screen.getByRole('img', {
+      name: 'mistake stitch unit',
+    })).toBeInTheDocument()
+    expect(screen.getByText(/시스템 안에서 어긋남을 사건과 인터랙션/)).toBeInTheDocument()
+  })
+
+  it('opens the stitch inspector when the clickable stitch is selected', () => {
     render(<Test />)
 
     fireEvent.click(screen.getByRole('button', {
       name: 'knit stitch row 2, column 3',
     }))
 
-    expect(screen.getByRole('dialog', { name: '클릭 가능' })).toBeInTheDocument()
+    const dialog = screen.getByRole('dialog', { name: 'Selected stitch' })
+
+    expect(within(dialog).getByText('row 2')).toBeInTheDocument()
+    expect(within(dialog).getByText('column 3')).toBeInTheDocument()
+    expect(within(dialog).getByText('kind knit')).toBeInTheDocument()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: '닫기' }))
+
+    expect(screen.queryByRole('dialog', {
+      name: 'Selected stitch',
+    })).not.toBeInTheDocument()
   })
 
   it('moves the knitted fabric down while scrolling and back up when scrolling back', async () => {
     render(<Test />)
 
     const pattern = screen.getByLabelText('scroll knitted cable pattern')
+    const cablePattern = screen.getByLabelText('15 stitch scroll cable pattern')
     const scrollRoot = pattern.closest<HTMLElement>('.knit-scroll-pattern')
 
+    expect(cablePattern).toHaveAttribute('data-row-count', '18')
     expect(scrollRoot).not.toBeNull()
 
     if (!scrollRoot) {

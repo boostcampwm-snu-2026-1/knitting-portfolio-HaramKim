@@ -19,6 +19,10 @@ describe('Test scroll knitting demo', () => {
   it('introduces the basic stitch units', () => {
     render(<Test />)
 
+    const colorworkPattern = screen.getByLabelText(
+      'manual grayscale colorwork pattern',
+    )
+
     expect(screen.getByRole('heading', {
       name: 'Knit UI System',
     })).toBeInTheDocument()
@@ -35,6 +39,7 @@ describe('Test scroll knitting demo', () => {
       name: 'mistake stitch unit',
     })).toBeInTheDocument()
     expect(screen.getByText(/turns deviation into interaction/)).toBeInTheDocument()
+    expect(colorworkPattern).toHaveAttribute('data-row-count', '10')
   })
 
   it('opens the stitch inspector when the clickable stitch is selected', () => {

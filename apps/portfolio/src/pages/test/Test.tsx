@@ -53,7 +53,7 @@ const cablePattern: KnitPatternData = {
     10,
   ),
   palette: {
-    colors: [testPalette.primary200],
+    colors: [testPalette.accentRust],
   },
   cables: [
     {
@@ -66,11 +66,11 @@ const cablePattern: KnitPatternData = {
       count: 2,
       cross: 'left-over-right',
       color: [
-        testPalette.primary100,
-        testPalette.primary100,
-        testPalette.primary100,
+        testPalette.accentYellow,
+        testPalette.accentGreen,
         testPalette.primary600,
-        testPalette.primary600,
+        testPalette.accentRed,
+        testPalette.primary700,
         testPalette.primary600,
       ],
     },
@@ -88,62 +88,9 @@ const colorworkPattern: KnitPatternData = {
       testPalette.primary700,
     ],
   },
-  rows: [
-    {
-      stitches: [
-        ...makeColorRow('knit', [
-          testPalette.canvas,
-          testPalette.surface,
-          testPalette.primary100,
-          testPalette.primary600,
-          testPalette.primary700,
-        ]),
-        ...makeColorRow('knit', [
-          testPalette.accentRust,
-          testPalette.primary700,
-          testPalette.primary100,
-          testPalette.surface,
-          testPalette.canvas,
-        ]),
-      ],
-    },
-    {
-      stitches: [
-        ...makeColorRow('purl', [
-          testPalette.accentRust,
-          testPalette.primary700,
-          testPalette.primary200,
-          testPalette.surface,
-          testPalette.canvas,
-        ]),
-        ...makeColorRow('purl', [
-          testPalette.canvas,
-          testPalette.surface,
-          testPalette.primary100,
-          testPalette.primary600,
-          testPalette.primary700,
-        ]),
-      ],
-    },
-    {
-      stitches: [
-        ...makeColorRow('knit', [
-          testPalette.surface,
-          testPalette.primary100,
-          testPalette.primary600,
-          testPalette.primary700,
-          testPalette.primary700,
-        ]),
-        ...makeColorRow('knit', [
-          testPalette.primary700,
-          testPalette.accentRust,
-          testPalette.accentGreen,
-          testPalette.primary100,
-          testPalette.surface,
-        ]),
-      ],
-    },
-  ],
+  rows: Array.from({ length: 10 }, (_, rowIndex) => ({
+    stitches: makeColorworkRow(rowIndex),
+  })),
 }
 
 const clickablePattern: KnitPatternData = {
@@ -264,6 +211,50 @@ function makeRowKinds(kind: StitchKind, count: number) {
 
 function makeColorRow(kind: StitchKind, colors: string[]) {
   return colors.map((color) => ({ kind, color }))
+}
+
+function makeColorworkRow(rowIndex: number) {
+  const rowKind: StitchKind = rowIndex % 2 === 0 ? 'knit' : 'purl'
+  const colorRows = [
+    [
+      testPalette.canvas,
+      testPalette.surface,
+      testPalette.primary100,
+      testPalette.primary600,
+      testPalette.primary700,
+      testPalette.accentRust,
+      testPalette.primary700,
+      testPalette.primary100,
+      testPalette.surface,
+      testPalette.canvas,
+    ],
+    [
+      testPalette.accentRust,
+      testPalette.primary700,
+      testPalette.primary200,
+      testPalette.surface,
+      testPalette.canvas,
+      testPalette.canvas,
+      testPalette.surface,
+      testPalette.primary100,
+      testPalette.primary600,
+      testPalette.primary700,
+    ],
+    [
+      testPalette.surface,
+      testPalette.primary100,
+      testPalette.primary600,
+      testPalette.primary700,
+      testPalette.primary700,
+      testPalette.primary700,
+      testPalette.accentRust,
+      testPalette.accentGreen,
+      testPalette.primary100,
+      testPalette.surface,
+    ],
+  ]
+
+  return makeColorRow(rowKind, colorRows[rowIndex % colorRows.length])
 }
 
 function makePattern(
@@ -404,7 +395,7 @@ function Test() {
             aria-label="manual grayscale colorwork pattern"
             density="compact"
             pattern={colorworkPattern}
-            stitchSize={34}
+            stitchSize={44}
           />
         </article>
 

@@ -20,7 +20,7 @@ export function StitchInspectorModal({
   onClose,
   stitch,
 }: StitchInspectorModalProps) {
-  const stitchColor = stitch.color ?? '#070707'
+  const stitchColor = stitch.color ?? '#22609B'
   const stitchColorStyle = {
     '--stitch-inspector-color': stitchColor,
   } as CSSProperties
@@ -85,7 +85,7 @@ export function StitchInspectorModal({
           onClick={onClose}
           type="button"
         >
-          닫기
+          Close
         </button>
       </section>
     </div>

@@ -14,6 +14,20 @@ import { StitchInspectorModal } from './StitchInspectorModal'
 import type { SelectedStitch } from './StitchInspectorModal'
 import styles from './Test.module.css'
 
+const testPalette = {
+  canvas: '#FBF4F0',
+  surface: '#ECE6E3',
+  primary100: '#ADCCE8',
+  primary200: '#B4C9DA',
+  primary600: '#1C67B0',
+  primary700: '#22609B',
+  accentGreen: '#397C43',
+  accentRed: '#E23117',
+  accentOrange: '#DF591E',
+  accentYellow: '#E6BD41',
+  accentRust: '#9B301C',
+}
+
 const stockinettePattern: KnitPatternData = {
   ...makePattern(
     [
@@ -24,7 +38,7 @@ const stockinettePattern: KnitPatternData = {
     5,
   ),
   palette: {
-    colors: ['#070707'],
+    colors: [testPalette.primary700],
   },
 }
 
@@ -39,7 +53,7 @@ const cablePattern: KnitPatternData = {
     10,
   ),
   palette: {
-    colors: ['#E88C8C'],
+    colors: [testPalette.primary200],
   },
   cables: [
     {
@@ -51,7 +65,14 @@ const cablePattern: KnitPatternData = {
       rightEndStitch: 7,
       count: 2,
       cross: 'left-over-right',
-      color: ['#F79999', '#F79999', '#F79999', '#B26666', '#B26666', '#B26666'],
+      color: [
+        testPalette.primary100,
+        testPalette.primary100,
+        testPalette.primary100,
+        testPalette.primary600,
+        testPalette.primary600,
+        testPalette.primary600,
+      ],
     },
   ],
 }
@@ -59,25 +80,67 @@ const cablePattern: KnitPatternData = {
 const colorworkPattern: KnitPatternData = {
   castOn: 10,
   palette: {
-    colors: ['#f2f2f2', '#bfbfbf', '#7d7d7d', '#434343', '#070707'],
+    colors: [
+      testPalette.canvas,
+      testPalette.surface,
+      testPalette.primary100,
+      testPalette.primary600,
+      testPalette.primary700,
+    ],
   },
   rows: [
     {
       stitches: [
-        ...makeColorRow('knit', ['#f2f2f2', '#bfbfbf', '#7d7d7d', '#434343', '#070707']),
-        ...makeColorRow('knit', ['#070707', '#434343', '#7d7d7d', '#bfbfbf', '#f2f2f2']),
+        ...makeColorRow('knit', [
+          testPalette.canvas,
+          testPalette.surface,
+          testPalette.primary100,
+          testPalette.primary600,
+          testPalette.primary700,
+        ]),
+        ...makeColorRow('knit', [
+          testPalette.accentRust,
+          testPalette.primary700,
+          testPalette.primary100,
+          testPalette.surface,
+          testPalette.canvas,
+        ]),
       ],
     },
     {
       stitches: [
-        ...makeColorRow('purl', ['#070707', '#434343', '#7d7d7d', '#bfbfbf', '#f2f2f2']),
-        ...makeColorRow('purl', ['#f2f2f2', '#bfbfbf', '#7d7d7d', '#434343', '#070707']),
+        ...makeColorRow('purl', [
+          testPalette.accentRust,
+          testPalette.primary700,
+          testPalette.primary200,
+          testPalette.surface,
+          testPalette.canvas,
+        ]),
+        ...makeColorRow('purl', [
+          testPalette.canvas,
+          testPalette.surface,
+          testPalette.primary100,
+          testPalette.primary600,
+          testPalette.primary700,
+        ]),
       ],
     },
     {
       stitches: [
-        ...makeColorRow('knit', ['#bfbfbf', '#7d7d7d', '#434343', '#070707', '#434343']),
-        ...makeColorRow('knit', ['#434343', '#070707', '#434343', '#7d7d7d', '#bfbfbf']),
+        ...makeColorRow('knit', [
+          testPalette.surface,
+          testPalette.primary100,
+          testPalette.primary600,
+          testPalette.primary700,
+          testPalette.primary700,
+        ]),
+        ...makeColorRow('knit', [
+          testPalette.primary700,
+          testPalette.accentRust,
+          testPalette.accentGreen,
+          testPalette.primary100,
+          testPalette.surface,
+        ]),
       ],
     },
   ],
@@ -86,17 +149,35 @@ const colorworkPattern: KnitPatternData = {
 const clickablePattern: KnitPatternData = {
   castOn: 5,
   palette: {
-    colors: ['#070707', '#AA3BFF'],
+    colors: [testPalette.primary700, testPalette.accentRed],
   },
   rows: [
     {
-      stitches: makeColorRow('knit', ['#070707', '#070707', '#070707', '#070707', '#070707']),
+      stitches: makeColorRow('knit', [
+        testPalette.primary700,
+        testPalette.primary700,
+        testPalette.primary700,
+        testPalette.primary700,
+        testPalette.primary700,
+      ]),
     },
     {
-      stitches: makeColorRow('knit', ['#070707', '#070707', '#AA3BFF', '#070707', '#070707']),
+      stitches: makeColorRow('knit', [
+        testPalette.primary700,
+        testPalette.primary700,
+        testPalette.accentRed,
+        testPalette.primary700,
+        testPalette.primary700,
+      ]),
     },
     {
-      stitches: makeColorRow('knit', ['#070707', '#070707', '#070707', '#070707', '#070707']),
+      stitches: makeColorRow('knit', [
+        testPalette.primary700,
+        testPalette.primary700,
+        testPalette.primary700,
+        testPalette.primary700,
+        testPalette.primary700,
+      ]),
     },
   ],
 }
@@ -108,7 +189,11 @@ const clickableStitchPositions: KnitStitchPositionTarget[] = [
 const scrollCablePattern: KnitPatternData = {
   castOn: 15,
   palette: {
-    colors: ['#16171d', '#6D58F2', '#D6A15F'],
+    colors: [
+      testPalette.primary700,
+      testPalette.primary600,
+      testPalette.accentOrange,
+    ],
   },
   rows: Array.from({ length: 18 }, (_, rowIndex) => ({
     stitches: makeScrollCableRow(rowIndex),
@@ -123,7 +208,14 @@ const scrollCablePattern: KnitPatternData = {
       rightEndStitch: 8,
       count: 3,
       cross: 'left-over-right',
-      color: ['#8B7BFF', '#8B7BFF', '#8B7BFF', '#4E3DB8', '#4E3DB8', '#4E3DB8'],
+      color: [
+        testPalette.primary100,
+        testPalette.primary100,
+        testPalette.primary100,
+        testPalette.primary600,
+        testPalette.primary600,
+        testPalette.primary600,
+      ],
     },
     {
       row: 3,
@@ -134,7 +226,12 @@ const scrollCablePattern: KnitPatternData = {
       rightEndStitch: 13,
       count: 3,
       cross: 'right-over-left',
-      color: ['#E2B26D', '#E2B26D', '#A66E3F', '#A66E3F'],
+      color: [
+        testPalette.accentYellow,
+        testPalette.accentYellow,
+        testPalette.accentRust,
+        testPalette.accentRust,
+      ],
     },
   ],
 }
@@ -145,17 +242,17 @@ const stitchPrinciples: {
   title: string
 }[] = [
   {
-    description: '안뜨기는 표면을 뒤집어 요철을 만듭니다. 같은 반복 안에서도 밀도, 그림자, 리듬을 바꾸는 단위입니다.',
+    description: 'Purl turns the surface back toward texture. It changes density, shadow, and rhythm inside the same repeat.',
     kind: 'purl',
     title: 'purl',
   },
   {
-    description: '겉뜨기는 화면의 앞면을 세우는 기본 단위입니다. 반복될수록 방향과 흐름이 생기고, 패턴의 골격이 됩니다.',
+    description: 'Knit builds the front-facing structure. As it repeats, it becomes direction, flow, and the frame of the pattern.',
     kind: 'knit',
     title: 'knit',
   },
   {
-    description: 'mistake는 오류가 아니라 감각이 개입하는 지점입니다. 시스템 안에서 어긋남을 사건과 인터랙션으로 남깁니다.',
+    description: 'Mistake is not just an error. It marks where touch enters the system and turns deviation into interaction.',
     kind: 'mistake',
     title: 'mistake',
   },
@@ -191,22 +288,33 @@ function makeRowFromKinds(kinds: StitchKind[]) {
 }
 
 function makeScrollCableRow(rowIndex: number) {
-  const centerColor = rowIndex % 2 === 0 ? '#6D58F2' : '#5A48C7'
-  const sideColor = rowIndex % 3 === 0 ? '#D6A15F' : '#B8844B'
+  const centerColor =
+    rowIndex % 2 === 0 ? testPalette.primary600 : testPalette.primary700
+  const sideColor =
+    rowIndex % 3 === 0 ? testPalette.accentOrange : testPalette.accentRust
 
   return [
-    ...makeColorRow('purl', ['#D8D0C1', '#C9BEAD', '#D8D0C1']),
+    ...makeColorRow('purl', [
+      testPalette.surface,
+      testPalette.primary200,
+      testPalette.surface,
+    ]),
     ...makeColorRow('knit', [
       centerColor,
       centerColor,
       centerColor,
-      '#4B3AA8',
-      '#4B3AA8',
-      '#4B3AA8',
+      testPalette.primary700,
+      testPalette.primary700,
+      testPalette.primary700,
     ]),
-    ...makeColorRow('purl', ['#C9BEAD']),
-    ...makeColorRow('knit', [sideColor, sideColor, '#9A6538', '#9A6538']),
-    ...makeColorRow('purl', ['#D8D0C1']),
+    ...makeColorRow('purl', [testPalette.primary200]),
+    ...makeColorRow('knit', [
+      sideColor,
+      sideColor,
+      testPalette.accentGreen,
+      testPalette.accentGreen,
+    ]),
+    ...makeColorRow('purl', [testPalette.surface]),
   ]
 }
 
@@ -238,7 +346,7 @@ function Test() {
         </div>
 
         <div className={styles.stitchPrinciplesBlock}>
-          <h2>기본 단위</h2>
+          <h2>Basic Units</h2>
           <div className={styles.stitchPrinciples} aria-label="basic stitch units">
             {stitchPrinciples.map(({ description, kind, title }) => (
               <article className={styles.stitchPrinciple} key={kind}>

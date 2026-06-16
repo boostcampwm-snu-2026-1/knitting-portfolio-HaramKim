@@ -23,7 +23,7 @@ describe('Test scroll knitting demo', () => {
       name: 'Knit UI System',
     })).toBeInTheDocument()
     expect(screen.getByRole('heading', {
-      name: '기본 단위',
+      name: 'Basic Units',
     })).toBeInTheDocument()
     expect(screen.getByRole('img', {
       name: 'purl stitch unit',
@@ -34,7 +34,7 @@ describe('Test scroll knitting demo', () => {
     expect(screen.getByRole('img', {
       name: 'mistake stitch unit',
     })).toBeInTheDocument()
-    expect(screen.getByText(/시스템 안에서 어긋남을 사건과 인터랙션/)).toBeInTheDocument()
+    expect(screen.getByText(/turns deviation into interaction/)).toBeInTheDocument()
   })
 
   it('opens the stitch inspector when the clickable stitch is selected', () => {
@@ -50,7 +50,7 @@ describe('Test scroll knitting demo', () => {
     expect(within(dialog).getByText('column 3')).toBeInTheDocument()
     expect(within(dialog).getByText('kind knit')).toBeInTheDocument()
 
-    fireEvent.click(within(dialog).getByRole('button', { name: '닫기' }))
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
 
     expect(screen.queryByRole('dialog', {
       name: 'Selected stitch',

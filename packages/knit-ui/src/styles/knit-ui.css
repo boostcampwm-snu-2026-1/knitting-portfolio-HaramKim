@@ -88,11 +88,15 @@
 }
 
 .knit-stitch-unit {
+  --knit-stitch-aspect-ratio: 1;
   --knit-stitch-hover-scale: 1;
   --knit-stitch-stroke-width: 40px;
 
   display: inline-block;
   width: var(--knit-stitch-size, 48px);
+  width: calc(
+    var(--knit-stitch-size, 48px) * var(--knit-stitch-aspect-ratio)
+  );
   height: var(--knit-stitch-size, 48px);
   overflow: visible;
   color: var(--knit-stitch-color, var(--knit-color-stitch, #070707));

@@ -104,11 +104,13 @@ export function KnitPattern({
     ...style,
     '--knit-pattern-cast-on': pattern.castOn,
     '--knit-pattern-stitch-size': toCssSize(stitchSize),
-    ...(stitchOverlap
+    ...(stitchOverlap !== undefined
       ? { '--knit-pattern-stitch-overlap': toCssSize(stitchOverlap) }
       : {}),
-    ...(gap ? { '--knit-pattern-gap': toCssSize(gap) } : {}),
-    ...(rowGap ? { '--knit-pattern-row-gap': toCssSize(rowGap) } : {}),
+    ...(gap !== undefined ? { '--knit-pattern-gap': toCssSize(gap) } : {}),
+    ...(rowGap !== undefined
+      ? { '--knit-pattern-row-gap': toCssSize(rowGap) }
+      : {}),
   } as CSSProperties
   const ariaLabel = props['aria-label']
   const cables = getExpandedCables(pattern.cables)

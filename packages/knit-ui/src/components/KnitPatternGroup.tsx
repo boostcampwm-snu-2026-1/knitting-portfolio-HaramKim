@@ -25,7 +25,7 @@ export function KnitPatternGroup({
     .join(' ')
   const groupStyle = {
     ...style,
-    ...(gap ? { '--knit-pattern-group-gap': toCssSize(gap) } : {}),
+    ...(gap !== undefined ? { '--knit-pattern-group-gap': toCssSize(gap) } : {}),
   } as CSSProperties
 
   return (

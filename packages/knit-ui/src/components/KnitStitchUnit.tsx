@@ -2,6 +2,9 @@ import type { CSSProperties, SVGProps } from 'react'
 import type { StitchKind } from '../pattern'
 import '../styles/knit-ui.css'
 
+const STITCH_VIEW_BOX = '2.6 14 123 92'
+const STITCH_ASPECT_RATIO = 123 / 92
+
 export interface KnitStitchUnitProps
   extends Omit<SVGProps<SVGSVGElement>, 'color'> {
   kind: StitchKind
@@ -24,6 +27,7 @@ export function KnitStitchUnit({
     .join(' ')
   const stitchStyle = {
     ...style,
+    '--knit-stitch-aspect-ratio': STITCH_ASPECT_RATIO,
     '--knit-stitch-color': color,
     '--knit-stitch-size': typeof size === 'number' ? `${size}px` : size,
     ...(strokeWidth
@@ -42,7 +46,7 @@ export function KnitStitchUnit({
       focusable="false"
       role={ariaLabel ? 'img' : undefined}
       style={stitchStyle}
-      viewBox="0 0 120 120"
+      viewBox={STITCH_VIEW_BOX}
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
@@ -73,6 +77,7 @@ function PurlShape() {
     <path
       className="knit-stitch-unit__thread"
       d="M20.1 65.8C20.1 65.8 48.1 54.4 66 53.2C83.9 52 112 61.6 112 61.6"
+      transform="translate(-2 0)"
     />
   )
 }
@@ -82,6 +87,7 @@ function MistakeShape() {
     <path
       className="knit-stitch-unit__thread"
       d="M51.6 103.7C22.6 74.7 12.5 22.2 60.3 22.2C108.1 22.2 99.4 73.8 67.5 103.7"
+      transform="translate(4 0)"
     />
   )
 }

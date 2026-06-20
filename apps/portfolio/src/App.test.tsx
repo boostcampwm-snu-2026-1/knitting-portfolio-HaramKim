@@ -17,26 +17,26 @@ afterEach(() => {
 })
 
 describe('App', () => {
-  it('renders the Home design portfolio landing', () => {
+  it('renders the Home knitting portfolio stage', () => {
     render(<App />)
 
-    const scrollPattern = screen.getByLabelText('home knit scroll pattern')
+    const scrollPattern = screen.getByLabelText('portfolio knitting stage')
     const knitPattern = screen.getByLabelText(
-      '28 by 30 knit purl cable repeat pattern',
+      'Figma matched grey and white knit purl portfolio pattern',
     )
 
-    expect(screen.getByRole('heading', {
+    expect(screen.queryByRole('heading', {
       name: 'Design Portfolio',
-    })).toBeInTheDocument()
+    })).not.toBeInTheDocument()
     expect(scrollPattern).toHaveClass('knit-scroll-pattern')
-    expect(knitPattern).toHaveAttribute('data-row-count', '30')
+    expect(knitPattern).toHaveAttribute('data-row-count', '38')
   })
 
-  it('navigates to the Test page when the left cable pattern is clicked', () => {
+  it('navigates to the Test page when the linked stitch is clicked', () => {
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', {
-      name: /cable stitch row 2, column 3/,
+      name: /purl stitch row 7, column 3/,
     }))
 
     expect(window.location.pathname).toBe('/test')

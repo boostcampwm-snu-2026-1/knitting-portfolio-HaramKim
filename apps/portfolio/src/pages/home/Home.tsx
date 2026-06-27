@@ -9,8 +9,8 @@ import './Home.css'
 const homePalette = {
   background: '#101010',
   white: '#E7E7E7',
-  grey: '#7D7D7D',
-  darkGrey: '#474747',
+  grey: '#595959',
+  darkGrey: '#383838',
 }
 
 const homeHighlightPattern = [

@@ -83,10 +83,10 @@ export function KnitScrollPattern({
   const scrollStyle = {
     ...style,
     '--knit-scroll-progress': progress,
-    '--knit-scroll-needle-left-angle': `${(needleAngle + needleLiftProgress * 2) * -1}deg`,
+    '--knit-scroll-needle-left-angle': `${(needleAngle + needleLiftProgress * 3) * -1}deg`,
     '--knit-scroll-needle-left-x': `${needlePierceProgress * -12}px`,
     '--knit-scroll-needle-left-y': `${needleLiftProgress * -7}px`,
-    '--knit-scroll-needle-right-angle': `${needleAngle + needlePierceProgress * -5}deg`,
+    '--knit-scroll-needle-right-angle': `${needleAngle + needlePierceProgress * -7}deg`,
     '--knit-scroll-needle-right-x': `${needlePierceProgress * -34}px`,
     '--knit-scroll-needle-right-y': `${needleLiftProgress * 12}px`,
     '--knit-scroll-length': scrollLengthCss,

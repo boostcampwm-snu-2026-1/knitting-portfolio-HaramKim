@@ -1,4 +1,5 @@
 import { KnitPattern, KnitScrollPattern } from '@knit-ui/core'
+import { useEffect, useRef, useState } from 'react'
 import type {
   KnitPatternData,
   KnitStitchPositionTarget,
@@ -79,6 +80,7 @@ const HOME_PATTERN_ARIA_LABEL =
 const HOME_SCROLL_ARIA_LABEL = 'portfolio knitting stage'
 const HOME_STITCH_DENSITY = 'compact'
 const HOME_MISTAKE_FREQUENCY = 0.01
+const HOME_SCROLL_INDICATOR_FADE_VIEWPORT_RATIO = 0.5
 
 const homeNeedleOptions = {
   angle: HOME_NEEDLE_ANGLE,
@@ -156,6 +158,48 @@ function getVisualColumnStartIndex(visualColumnIndex: number): number {
 
 function Home({ onNavigateToTest }: HomeProps) {
   const enableTestNavigation = Boolean(onNavigateToTest)
+  const scrollIndicatorRef = useRef<HTMLDivElement>(null)
+  const [scrollIndicatorOpacity, setScrollIndicatorOpacity] = useState(1)
+
+  useEffect(() => {
+    let frame = 0
+
+    const updateScrollIndicatorOpacity = () => {
+      frame = 0
+      const scrollIndicator = scrollIndicatorRef.current
+
+      if (!scrollIndicator) {
+        return
+      }
+
+      const fadeDistance = Math.max(
+        1,
+        window.innerHeight * HOME_SCROLL_INDICATOR_FADE_VIEWPORT_RATIO,
+      )
+      const scrollIndicatorRect = scrollIndicator.getBoundingClientRect()
+      const progress = clampNumber(scrollIndicatorRect.top / fadeDistance, 0, 1)
+
+      setScrollIndicatorOpacity(progress**2)
+    }
+
+    const requestScrollIndicatorUpdate = () => {
+      if (frame === 0) {
+        frame = window.requestAnimationFrame(updateScrollIndicatorOpacity)
+      }
+    }
+
+    requestScrollIndicatorUpdate()
+    window.addEventListener('scroll', requestScrollIndicatorUpdate, {
+      passive: true,
+    })
+    window.addEventListener('resize', requestScrollIndicatorUpdate)
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', requestScrollIndicatorUpdate)
+      window.removeEventListener('resize', requestScrollIndicatorUpdate)
+    }
+  }, [])
 
   function handleHomeStitchClick() {
     onNavigateToTest?.()
@@ -186,8 +230,19 @@ function Home({ onNavigateToTest }: HomeProps) {
           stitchSize={HOME_STITCH_SIZE}
         />
       </KnitScrollPattern>
+      <div
+        className="home-scroll-indicator"
+        ref={scrollIndicatorRef}
+        style={{ opacity: scrollIndicatorOpacity }}
+      >
+        Scroll down
+      </div>
     </main>
   )
+}
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
 }
 
 export default Home

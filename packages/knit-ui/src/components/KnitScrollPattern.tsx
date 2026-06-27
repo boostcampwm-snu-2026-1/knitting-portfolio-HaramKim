@@ -291,7 +291,8 @@ function getScrollLengthCss(
     return '0px'
   }
 
-  return `${totalFabricHeight / fabricSpeed + totalFabricHeight*fabricSpeed}px`
+  return `${totalFabricHeight / fabricSpeed + totalFabricHeight*fabricSpeed + 500}px`
+  // 500px 대신 편물의 padding을 더하는 방식으로 수정해야함
 }
 
 function getVisibleStitchCountAtOffset(

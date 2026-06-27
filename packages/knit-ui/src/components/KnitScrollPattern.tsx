@@ -291,7 +291,7 @@ function getScrollLengthCss(
     return '0px'
   }
 
-  return `${totalFabricHeight / fabricSpeed}px`
+  return `${totalFabricHeight / fabricSpeed + totalFabricHeight*fabricSpeed}px`
 }
 
 function getVisibleStitchCountAtOffset(

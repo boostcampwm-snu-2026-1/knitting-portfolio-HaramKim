@@ -161,7 +161,7 @@
 
 .knit-scroll-pattern {
   --knit-scroll-background: #1b1b1b;
-  --knit-scroll-length: 160vh;
+  --knit-scroll-length: 0px;
   --knit-scroll-needle-angle: 13.63deg;
   --knit-scroll-needle-color: #e2a959;
   --knit-scroll-needle-highlight: #eecea2;
@@ -199,7 +199,6 @@
   margin: 0 auto;
   padding-top: calc(var(--knit-scroll-needle-thickness) * 3.25);
   transform: translateY(var(--knit-scroll-fabric-y));
-  transition: transform 180ms ease;
   width: 100%;
 }
 

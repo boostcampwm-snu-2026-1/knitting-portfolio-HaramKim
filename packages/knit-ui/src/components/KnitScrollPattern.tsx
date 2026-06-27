@@ -32,6 +32,7 @@ export interface KnitScrollNeedleOptions {
 }
 
 export interface KnitScrollPatternProps extends HTMLAttributes<HTMLDivElement> {
+  fabricSpeed?: number
   needle?: KnitScrollNeedleOptions
   scrollLength?: number | string
   stitchOrder?: KnitScrollStitchOrder
@@ -40,21 +41,36 @@ export interface KnitScrollPatternProps extends HTMLAttributes<HTMLDivElement> {
 export function KnitScrollPattern({
   children,
   className,
+  fabricSpeed,
   needle,
-  scrollLength = '160vh',
+  scrollLength,
   stitchOrder = 'alternating',
   style,
   ...props
 }: KnitScrollPatternProps) {
   const rootRef = useRef<HTMLDivElement>(null)
+  const fabricScrollSpeed = normalizeFabricScrollSpeed(fabricSpeed)
   const needleMotionSpeed = normalizeNeedleMotionSpeed(needle?.speed)
-  const { progress, needleMotionProgress } = useKnitScrollState(
+  const { progress, scrollTop, needleMotionProgress } = useKnitScrollState(
     rootRef,
     needleMotionSpeed,
   )
-  const totalStitchCount = getScrollableStitchCount(children)
-  const visibleStitchCount = Math.ceil(totalStitchCount * progress)
-  const hiddenFabricOffset = getHiddenFabricOffset(children, visibleStitchCount)
+  const totalFabricHeight = getScrollableFabricHeight(children)
+  const fabricRevealOffset = getFabricRevealOffset(
+    totalFabricHeight,
+    scrollTop,
+    fabricScrollSpeed,
+  )
+  const visibleStitchCount = getVisibleStitchCountAtOffset(
+    children,
+    fabricRevealOffset,
+  )
+  const hiddenFabricOffset = totalFabricHeight - fabricRevealOffset
+  const scrollLengthCss = getScrollLengthCss(
+    totalFabricHeight,
+    fabricScrollSpeed,
+    scrollLength,
+  )
   const revealedChildren = revealScrollPatterns(
     children,
     visibleStitchCount,
@@ -73,7 +89,7 @@ export function KnitScrollPattern({
     '--knit-scroll-needle-right-angle': `${needleAngle + needlePierceProgress * -5}deg`,
     '--knit-scroll-needle-right-x': `${needlePierceProgress * -34}px`,
     '--knit-scroll-needle-right-y': `${needleLiftProgress * 12}px`,
-    '--knit-scroll-length': toCssSize(scrollLength),
+    '--knit-scroll-length': scrollLengthCss,
     '--knit-scroll-needle-angle': `${needleAngle}deg`,
     '--knit-scroll-needle-color': needle?.color,
     '--knit-scroll-needle-highlight': needle?.highlightColor,
@@ -104,10 +120,12 @@ function KnitScrollNeedles() {
 
 interface KnitScrollState {
   progress: number
+  scrollTop: number
   needleMotionProgress: number
 }
 
 const NEEDLE_SCROLL_PIXELS_PER_LOOP = 420
+const DEFAULT_FABRIC_SCROLL_SPEED = 0.2
 
 function useKnitScrollState(
   rootRef: RefObject<HTMLDivElement | null>,
@@ -116,6 +134,7 @@ function useKnitScrollState(
   const [scrollState, setScrollState] = useState<KnitScrollState>({
     needleMotionProgress: 0,
     progress: 0,
+    scrollTop: 0,
   })
   const previousScrollTopRef = useRef<number | undefined>(undefined)
   const needleMotionOffsetRef = useRef(0)
@@ -131,6 +150,7 @@ function useKnitScrollState(
         setScrollState({
           needleMotionProgress: 0,
           progress: 1,
+          scrollTop: Number.POSITIVE_INFINITY,
         }),
       )
 
@@ -160,6 +180,7 @@ function useKnitScrollState(
       setScrollState({
         needleMotionProgress: getLoopProgress(needleMotionOffsetRef.current),
         progress: scrollTop / scrollDistance,
+        scrollTop,
       })
     }
     const requestUpdate = () => {
@@ -208,90 +229,152 @@ function getPatternStitchCount(pattern: KnitPatternProps['pattern']): number {
   return pattern.castOn * pattern.rows.length
 }
 
-function getHiddenFabricOffset(
-  children: ReactNode,
-  visibleStitchCount: number,
-): number {
-  let remainingStitchCount = visibleStitchCount
-  const childNodes = Children.toArray(children)
-  let hiddenOffset = 0
-
-  for (let index = childNodes.length - 1; index >= 0; index -= 1) {
-    const [nodeOffset, nextRemainingStitchCount] = getNodeHiddenOffset(
-      childNodes[index],
-      remainingStitchCount,
-    )
-
-    remainingStitchCount = nextRemainingStitchCount
-    hiddenOffset += nodeOffset
-  }
-
-  return hiddenOffset
+function getScrollableFabricHeight(children: ReactNode): number {
+  return getChildNodesFabricHeight(children)
 }
 
-function getNodeHiddenOffset(
-  node: ReactNode,
-  remainingStitchCount: number,
-): [number, number] {
+function getNodeFabricHeight(node: ReactNode): number {
   if (!isElement(node)) {
-    return [0, remainingStitchCount]
+    return 0
   }
 
   if (isKnitPatternElement(node)) {
-    const pattern = node.props.pattern
-    const patternStitchCount = getPatternStitchCount(pattern)
-    const visibleStitchCount = clampNumber(
-      remainingStitchCount,
-      0,
-      patternStitchCount,
-    )
-    const visibleRowCount = Math.min(
-      pattern.rows.length,
-      Math.max(0, Math.ceil(visibleStitchCount / pattern.castOn)),
-    )
-    const hiddenRowCount = pattern.rows.length - visibleRowCount
-
-    return [
-      getPatternHiddenOffset(node.props, hiddenRowCount),
-      remainingStitchCount - patternStitchCount,
-    ]
+    return getPatternHeight(node.props)
   }
 
   if (!node.props.children) {
-    return [0, remainingStitchCount]
+    return 0
   }
 
-  return getChildNodesHiddenOffset(
+  return getChildNodesFabricHeight(
     node.props.children,
-    remainingStitchCount,
     getVerticalGroupGap(node),
   )
 }
 
-function getChildNodesHiddenOffset(
-  children: ReactNode,
-  visibleStitchCount: number,
-  gap = 0,
-): [number, number] {
-  let remainingStitchCount = visibleStitchCount
+function getChildNodesFabricHeight(children: ReactNode, gap = 0): number {
   const childNodes = Children.toArray(children)
-  let hiddenOffset = 0
+  const stitchBearingNodes = childNodes.filter(
+    (child) => getNodeStitchCount(child) > 0,
+  )
+  const childHeight = stitchBearingNodes.reduce<number>(
+    (height, child) => height + getNodeFabricHeight(child),
+    0,
+  )
+  const gapCount = Math.max(0, stitchBearingNodes.length - 1)
 
-  for (let index = childNodes.length - 1; index >= 0; index -= 1) {
-    const [nodeOffset, nextRemainingStitchCount] = getNodeHiddenOffset(
-      childNodes[index],
-      remainingStitchCount,
-    )
+  return childHeight + gap * gapCount
+}
 
-    remainingStitchCount = nextRemainingStitchCount
-    hiddenOffset += nodeOffset
+function getFabricRevealOffset(
+  totalFabricHeight: number,
+  scrollTop: number,
+  fabricSpeed: number,
+): number {
+  if (!Number.isFinite(scrollTop)) {
+    return totalFabricHeight
+  }
 
-    if (index > 0 && remainingStitchCount < getPreviousSiblingStitchCount(childNodes, index)) {
-      hiddenOffset += gap
+  return clampNumber(scrollTop * fabricSpeed, 0, totalFabricHeight)
+}
+
+function getScrollLengthCss(
+  totalFabricHeight: number,
+  fabricSpeed: number,
+  scrollLength: number | string | undefined,
+): string {
+  if (scrollLength !== undefined && scrollLength !== 'auto') {
+    return toCssSize(scrollLength)
+  }
+
+  if (fabricSpeed <= 0) {
+    return '0px'
+  }
+
+  return `${totalFabricHeight / fabricSpeed}px`
+}
+
+function getVisibleStitchCountAtOffset(
+  children: ReactNode,
+  visibleOffset: number,
+): number {
+  return getChildNodesVisibleStitchCount(children, visibleOffset)
+}
+
+function getNodeVisibleStitchCount(
+  node: ReactNode,
+  visibleOffset: number,
+): number {
+  if (!isElement(node)) {
+    return 0
+  }
+
+  if (isKnitPatternElement(node)) {
+    return getPatternVisibleStitchCount(node.props, visibleOffset)
+  }
+
+  if (!node.props.children) {
+    return 0
+  }
+
+  return getChildNodesVisibleStitchCount(
+    node.props.children,
+    visibleOffset,
+    getVerticalGroupGap(node),
+  )
+}
+
+function getChildNodesVisibleStitchCount(
+  children: ReactNode,
+  visibleOffset: number,
+  gap = 0,
+): number {
+  let remainingOffset = visibleOffset
+  const childNodes = Children.toArray(children)
+  let visibleStitchCount = 0
+
+  for (
+    let index = childNodes.length - 1;
+    index >= 0 && remainingOffset > 0;
+    index -= 1
+  ) {
+    const child = childNodes[index]
+    const childHeight = getNodeFabricHeight(child)
+
+    if (childHeight > 0) {
+      const childOffset = Math.min(remainingOffset, childHeight)
+
+      visibleStitchCount += getNodeVisibleStitchCount(child, childOffset)
+      remainingOffset -= childOffset
+    }
+
+    if (
+      index > 0 &&
+      remainingOffset > 0 &&
+      getPreviousSiblingStitchCount(childNodes, index) > 0
+    ) {
+      remainingOffset -= gap
     }
   }
 
-  return [hiddenOffset, remainingStitchCount]
+  return visibleStitchCount
+}
+
+function getPatternVisibleStitchCount(
+  props: KnitPatternProps,
+  visibleOffset: number,
+): number {
+  const patternStitchCount = getPatternStitchCount(props.pattern)
+
+  if (visibleOffset >= getPatternHeight(props)) {
+    return patternStitchCount
+  }
+
+  return clampNumber(
+    Math.ceil((visibleOffset / getPatternRowStep(props)) * props.pattern.castOn),
+    0,
+    patternStitchCount,
+  )
 }
 
 function getPreviousSiblingStitchCount(
@@ -312,26 +395,12 @@ function getVerticalGroupGap(node: ReactElement<KnitScrollElementProps>): number
 }
 
 function getPatternRowStep(props: KnitPatternProps): number {
-  return (
+  return Math.max(
+    1,
     getNumericSize(props.stitchSize, 48) -
-    getNumericSize(props.stitchOverlap, 6) +
-    getNumericSize(props.rowGap ?? props.gap, getDensityGap(props.density))
+      getNumericSize(props.stitchOverlap, 6) +
+      getNumericSize(props.rowGap ?? props.gap, getDensityGap(props.density)),
   )
-}
-
-function getPatternHiddenOffset(
-  props: KnitPatternProps,
-  hiddenRowCount: number,
-): number {
-  if (hiddenRowCount <= 0) {
-    return 0
-  }
-
-  if (hiddenRowCount >= props.pattern.rows.length) {
-    return getPatternHeight(props)
-  }
-
-  return hiddenRowCount * getPatternRowStep(props)
 }
 
 function getPatternHeight(props: KnitPatternProps): number {
@@ -374,6 +443,14 @@ function getDensityGap(density: KnitPatternProps['density']): number {
   }
 
   return 4
+}
+
+function normalizeFabricScrollSpeed(speed: number | undefined): number {
+  if (speed === undefined || !Number.isFinite(speed)) {
+    return DEFAULT_FABRIC_SCROLL_SPEED
+  }
+
+  return Math.max(0, speed)
 }
 
 function normalizeNeedleMotionSpeed(speed: number | undefined): number {

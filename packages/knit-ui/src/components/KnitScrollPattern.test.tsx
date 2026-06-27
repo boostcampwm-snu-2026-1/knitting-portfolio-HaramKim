@@ -9,17 +9,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const scrollPattern: KnitPatternData = {
-  castOn: 2,
-  rows: [
-    {
-      stitches: [{ kind: 'knit' }, { kind: 'purl' }],
-    },
-    {
-      stitches: [{ kind: 'purl' }, { kind: 'knit' }],
-    },
-  ],
-}
+const scrollPattern = makeScrollPattern(2)
 
 describe('KnitScrollPattern needle motion', () => {
   it('moves needles by scroll distance instead of scroll progress', async () => {
@@ -39,7 +29,52 @@ describe('KnitScrollPattern needle motion', () => {
   })
 })
 
+describe('KnitScrollPattern fabric motion', () => {
+  it('sizes the automatic scroll area to the fabric reveal distance', () => {
+    render(
+      <KnitScrollPattern
+        aria-label="scroll pattern"
+        fabricSpeed={2}
+        needle={{ visible: true }}
+      >
+        <KnitPattern
+          gap={0}
+          pattern={makeScrollPattern(3)}
+          stitchOverlap={0}
+          stitchSize={50}
+        />
+      </KnitScrollPattern>,
+    )
+
+    const scrollRoot = screen.getByLabelText('scroll pattern')
+
+    expect(scrollRoot.style.getPropertyValue('--knit-scroll-length')).toBe(
+      '75px',
+    )
+  })
+
+  it('moves fabric by scroll distance instead of total pattern length', async () => {
+    const shortPatternScroll = await getScrollStateAfterDistance({
+      pattern: makeScrollPattern(2),
+      scrollableHeight: 2000,
+      scrollTop: 40,
+    })
+    const longPatternScroll = await getScrollStateAfterDistance({
+      pattern: makeScrollPattern(6),
+      scrollableHeight: 2000,
+      scrollTop: 40,
+    })
+
+    expect(shortPatternScroll.fabricYDelta).toBe(40)
+    expect(longPatternScroll.fabricYDelta).toBe(40)
+    expect(shortPatternScroll.visibleStitchCount).toBe(
+      longPatternScroll.visibleStitchCount,
+    )
+  })
+})
+
 interface ScrollMetrics {
+  pattern?: KnitPatternData
   scrollableHeight: number
   scrollTop: number
 }
@@ -47,7 +82,7 @@ interface ScrollMetrics {
 async function getScrollStateAfterDistance(metrics: ScrollMetrics) {
   const { unmount } = render(
     <KnitScrollPattern aria-label="scroll pattern" needle={{ visible: true }}>
-      <KnitPattern pattern={scrollPattern} />
+      <KnitPattern pattern={metrics.pattern ?? scrollPattern} />
     </KnitScrollPattern>,
   )
   const scrollRoot = screen.getByLabelText('scroll pattern')
@@ -57,6 +92,9 @@ async function getScrollStateAfterDistance(metrics: ScrollMetrics) {
     scrollTop: 0,
   })
   await nextAnimationFrame()
+  const initialFabricY = getPixelValue(
+    scrollRoot.style.getPropertyValue('--knit-scroll-fabric-y'),
+  )
 
   setScrollMetrics(scrollRoot, metrics)
   fireEvent.scroll(window)
@@ -71,10 +109,37 @@ async function getScrollStateAfterDistance(metrics: ScrollMetrics) {
     ),
     progress: scrollRoot.style.getPropertyValue('--knit-scroll-progress'),
   }
+  const fabricY = getPixelValue(
+    scrollRoot.style.getPropertyValue('--knit-scroll-fabric-y'),
+  )
+  const visibleStitchCount = scrollRoot.querySelectorAll(
+    '.knit-pattern-view__reveal-stitch--visible',
+  ).length
 
   unmount()
 
-  return state
+  return {
+    ...state,
+    fabricY,
+    fabricYDelta: fabricY - initialFabricY,
+    visibleStitchCount,
+  }
+}
+
+function makeScrollPattern(rowCount: number): KnitPatternData {
+  return {
+    castOn: 2,
+    rows: Array.from({ length: rowCount }, (_, rowIndex) => ({
+      stitches:
+        rowIndex % 2 === 0
+          ? [{ kind: 'knit' }, { kind: 'purl' }]
+          : [{ kind: 'purl' }, { kind: 'knit' }],
+    })),
+  }
+}
+
+function getPixelValue(value: string): number {
+  return Number.parseFloat(value)
 }
 
 function setScrollMetrics(element: HTMLElement, metrics: ScrollMetrics) {

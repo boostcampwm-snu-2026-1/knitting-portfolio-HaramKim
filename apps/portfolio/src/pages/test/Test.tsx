@@ -433,7 +433,6 @@ function Test() {
         <KnitScrollPattern
           aria-label="scroll knitted cable pattern"
           needle={{ visible: true }}
-          scrollLength="500vh"
         >
           <KnitPattern
             aria-label="15 stitch scroll cable pattern"

@@ -5,9 +5,9 @@
   --home-needle: #bfbfbf;
   --home-needle-highlight: #d8d8d8;
 
-  width: 100vw;
+  width: 100%;
   min-height: 100svh;
-  margin-inline: calc(50% - 50vw);
+  margin-inline: 0;
   overflow-x: clip;
   background: var(--home-canvas);
   color: var(--home-highlight);

@@ -7,55 +7,54 @@ import type {
 import './Home.css'
 
 const homePalette = {
-  canvas: '#1A1A1A',
-  stitch: '#666666',
-  highlight: '#F3F3F3',
-  needle: '#BFBFBF',
-  needleHighlight: '#D8D8D8',
+  background: '#101010',
+  white: '#E7E7E7',
+  grey: '#7D7D7D',
+  darkGrey: '#474747',
 }
 
 const homeHighlightPattern = [
-  '.................',
-  '.................',
-  '.................',
-  '.................',
-  '...........#.....',
-  '..........###....',
-  '.##..##.#..#.....',
-  '.#.##.#.####.....',
-  '.#.##.#.#..#.....',
-  '.##.#.#.#..#.....',
-  '.#...##.#..#.....',
-  '.#...............',
-  '.#....#...#.#....',
-  '.....#....#......',
-  '.....#..#.#.#.#..',
-  '....####.##.##.#.',
-  '.....#.#.##.##.#.',
-  '.....#.#.##.##.#.',
-  '.....#..#.#.#.#..',
-  '.................',
-  '.................',
-  '......#..##.#..#.',
-  '........#..###.#.',
-  '......#.#...#.##.',
-  '......#.#...#.##.',
-  '......#.#.###.##.',
-  '......#.#..##.##.',
-  '......#.###.#..#.',
-  '.................',
-  '.##.###..##......',
-  '.#.##...#........',
-  '.#.##...#........',
-  '.#.####.##.......',
-  '.#.##.....#......',
-  '.#.##.....#......',
-  '.##.###.###......',
-  '.................',
-  '.................',
+  ',....................,',
+  ',....................,',
+  ',....................,',
+  ',....................,',
+  ',............#.......,',
+  ',...........###......,',
+  ',##...#...#..#.......,',
+  ',#.#.#.#.###.#.......,',
+  ',#.#.#.#.#...#.......,',
+  ',##..#.#.#...#.......,',
+  ',#....#..#...#.......,',
+  ',#...................,',
+  ',#...................,',
+  ',.......#.....#......,',
+  ',......#......#.#....,',
+  ',.....###..#..#.#..#.,',
+  ',......#..#.#.#.#.#.#,',
+  ',......#..#.#.#.#.#.#,',
+  ',......#...#..#.#..#.,',
+  ',....................,',
+  ',....................,',
+  ',.........#..##..#..#,',
+  ',...........#..#.##.#,',
+  ',.........#.#....#.##,',
+  ',.........#.#....#.##,',
+  ',.........#.#.##.#.##,',
+  ',.........#.#..#.#.##,',
+  ',.........#.###..#..#,',
+  ',....................,',
+  ',##..###..##.........,',
+  ',#.#.#...#...........,',
+  ',#.#.#...#...........,',
+  ',#.#.###.##..........,',
+  ',#.#.#.....#.........,',
+  ',#.#.#.....#.........,',
+  ',##..###.###.........,',
+  ',....................,',
+  ',....................,',
 ] as const
 
-const homeColumnSpecs = Array.from({ length: 17 }, (_, columnIndex) => ({
+const homeColumnSpecs = Array.from({ length: 22 }, (_, columnIndex) => ({
   kind: columnIndex % 2 === 0 ? 'knit' : 'purl',
   span: 1,
 })) satisfies { kind: StitchKind; span: number }[]
@@ -68,23 +67,22 @@ const HOME_TEST_LINK_VISUAL_COLUMN = 1
 const HOME_TEST_LINK_ROW_START = 6
 const HOME_TEST_LINK_ROW_END = 12
 const HOME_STITCH_SIZE = 'clamp(34px, 3.47vw, 50px)'
-const HOME_SCROLL_LENGTH = '680vh'
 const HOME_STITCH_OVERLAP = 0
 const HOME_PATTERN_GAP = 0
 const HOME_PATTERN_ROW_GAP = 0
-const HOME_NEEDLE_ANGLE = 13.63
-const HOME_NEEDLE_SPEED = 0.84
+const HOME_NEEDLE_ANGLE = 15
+const HOME_NEEDLE_SPEED = 1
 const HOME_NEEDLE_THICKNESS = 18
 const HOME_PATTERN_ARIA_LABEL =
   'Figma matched grey and white knit purl portfolio pattern'
 const HOME_SCROLL_ARIA_LABEL = 'portfolio knitting stage'
 const HOME_STITCH_DENSITY = 'compact'
-const HOME_MISTAKE_FREQUENCY = 0
+const HOME_MISTAKE_FREQUENCY = 0.01
 
 const homeNeedleOptions = {
   angle: HOME_NEEDLE_ANGLE,
-  color: homePalette.needle,
-  highlightColor: homePalette.needleHighlight,
+  color: homePalette.grey,
+  highlightColor: homePalette.white,
   speed: HOME_NEEDLE_SPEED,
   thickness: HOME_NEEDLE_THICKNESS,
   visible: true,
@@ -93,7 +91,7 @@ const homeNeedleOptions = {
 const homePattern: KnitPatternData = {
   castOn: HOME_PATTERN_COLUMN_COUNT,
   palette: {
-    colors: [homePalette.stitch, homePalette.highlight],
+    colors: [homePalette.darkGrey, homePalette.grey, homePalette.white],
   },
   rows: homeHighlightPattern.map((_, rowIndex) => ({
     stitches: makeHomePatternRow(rowIndex),
@@ -114,13 +112,23 @@ function makeHomePatternRow(rowIndex: number) {
   const highlightRow = homeHighlightPattern[rowIndex] ?? ''
 
   return homeColumnSpecs.map(({ kind, span }, visualColumnIndex) => ({
-    color:
-      highlightRow[visualColumnIndex] === '#'
-        ? homePalette.highlight
-        : homePalette.stitch,
+    color: getUnitColor(highlightRow[visualColumnIndex]),
     kind,
     span,
   }))
+}
+
+function getUnitColor(unit: string) {
+  switch (unit) {
+    case '#':
+      return homePalette.white
+    case '.':
+      return homePalette.darkGrey
+    case ',':
+      return homePalette.grey
+    default:
+      return undefined
+  }
 }
 
 function getVisualColumnInteractivePositions(
@@ -158,7 +166,6 @@ function Home({ onNavigateToTest }: HomeProps) {
         aria-label={HOME_SCROLL_ARIA_LABEL}
         className="home-knit-scroll"
         needle={homeNeedleOptions}
-        scrollLength={HOME_SCROLL_LENGTH}
       >
         <KnitPattern
           aria-label={HOME_PATTERN_ARIA_LABEL}
